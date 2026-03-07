@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.FrameWindowScope
 import io.onema.divetelemetry.plugins.BooleanParameter
 import io.onema.divetelemetry.plugins.DiveLogPlugin
-import io.onema.divetelemetry.plugins.EnforcePressureUnitPlugin
 import io.onema.divetelemetry.plugins.IntParameter
 import io.onema.divetelemetry.plugins.InterpolationPlugin
 import io.onema.divetelemetry.plugins.StringParameter

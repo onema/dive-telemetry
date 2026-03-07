@@ -4,6 +4,8 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
+    id("io.gitlab.arturbosch.detekt")
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 val appVersion: String by project

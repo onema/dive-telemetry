@@ -1,5 +1,7 @@
 plugins {
     kotlin("multiplatform")
+    id("io.gitlab.arturbosch.detekt")
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 group = "io.onema"
