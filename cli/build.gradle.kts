@@ -78,7 +78,7 @@ kotlin {
             kotlin.srcDir(generatedSourcesDir)
             dependencies {
                 implementation(project(":lib"))
-                implementation("com.github.ajalt.clikt:clikt:5.0.3")
+                implementation("com.github.ajalt.clikt:clikt:5.1.0")
             }
         }
         commonTest.dependencies {
