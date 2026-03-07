@@ -77,7 +77,43 @@ Always source the `help` text from the plugin's own `description` property so th
 
 ## Plugins with `StringParameter` (dropdown / `.choice()`)
 
-For plugins that use `StringParameter` and override `configure()` (such as `EnforcePressureUnitPlugin`), the CLI pattern is slightly different: declare a nullable option with `.choice()` and delegate to `configure()` in `run()`.
+A `StringParameter` exposes a fixed set of string choices. The UI renders it as a dropdown; the CLI maps it to a `.choice()` option. Use it when the plugin has more than two meaningful states — for example, a unit selector where "default", "psi", and "bar" are all valid distinct choices (a `BooleanParameter` can only express on/off).
+
+### Defining a `StringParameter`
+
+```kotlin
+override val parameters: List<PluginParameter<*>> = listOf(
+    StringParameter(
+        key          = "unit",
+        name         = "Pressure Unit",         // label shown in UI and CLI help
+        description  = description,             // tooltip text
+        defaultValue = "default",               // selected when no config is provided
+        options      = listOf("default", "psi", "bar"),
+    )
+)
+```
+
+Because a `StringParameter` can represent a no-op choice (here `"default"`), the plugin must override `configure()` to return `null` for that value — which excludes it from the pipeline entirely — and a configured instance for the active choices:
+
+```kotlin
+override fun configure(config: Map<String, Any>): DiveLogPlugin? = when (config["unit"] as? String) {
+    "psi" -> Configured(PressureUnit.PSI)
+    "bar" -> Configured(PressureUnit.BAR)
+    else  -> null   // "default" or missing — excluded from pipeline
+}
+```
+
+See [creating-plugins.md](creating-plugins.md#adding-configurable-parameters) for the full `object` + inner `Configured` class pattern.
+
+---
+
+### Registering in the UI
+
+No extra UI code is needed — the dropdown is generated automatically from `options`. Add the plugin to `availablePlugins` exactly as with any other plugin (see [Desktop app](#desktop-app-appkt) above).
+
+### Registering in the CLI
+
+For plugins that use `StringParameter` and override `configure()`, the CLI pattern is slightly different: declare a nullable option with `.choice()` and delegate to `configure()` in `run()`.
 
 ### 1. Declare the option
 

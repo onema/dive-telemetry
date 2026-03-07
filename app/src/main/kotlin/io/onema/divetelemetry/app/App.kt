@@ -48,7 +48,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
-import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.FrameWindowScope
 import io.onema.divetelemetry.plugins.BooleanParameter
 import io.onema.divetelemetry.plugins.DiveLogPlugin
+import io.onema.divetelemetry.plugins.EnforcePressureUnitPlugin
 import io.onema.divetelemetry.plugins.IntParameter
 import io.onema.divetelemetry.plugins.InterpolationPlugin
 import io.onema.divetelemetry.plugins.StringParameter
@@ -77,6 +77,8 @@ import okio.sink
 import okio.source
 import java.awt.FileDialog
 import java.awt.datatransfer.DataFlavor
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
 import java.io.File
 
 private val DarkBackground = Color(0xFF1A1D23)
@@ -109,7 +111,7 @@ private val availableFormats: List<DiveComputerFormat> = defaultComputerFormats
 
 private val availablePlugins: List<DiveLogPlugin> = listOf(
     InterpolationPlugin,
-//    EnforcePressureUnitPlugin,
+//    EnforcePressureUnitPlugin, // Disable as this is a toy plugin.
 )
 
 private val availableOutputPlugins: List<OutputPlugin> = listOf(
@@ -347,7 +349,9 @@ private fun InputFileCard(
             @Suppress("UNCHECKED_CAST")
             override fun onDrop(event: DragAndDropEvent): Boolean {
                 isDragOver = false
-                val files = event.awtTransferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<File>
+                val dropEvent = event.nativeEvent as? DropTargetDropEvent ?: return false
+                dropEvent.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY)
+                val files = dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<File>
                 val file = files?.firstOrNull() ?: return false
                 onFileDrop(file)
                 return true
@@ -357,7 +361,10 @@ private fun InputFileCard(
     Card(
         modifier = modifier
             .dragAndDropTarget(
-                shouldStartDragAndDrop = { it.awtTransferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor) },
+                shouldStartDragAndDrop = { event ->
+                    val dragEvent = event.nativeEvent as? DropTargetDragEvent
+                    dragEvent?.isDataFlavorSupported(DataFlavor.javaFileListFlavor) == true
+                },
                 target = dropTarget,
             )
             .then(if (isDragOver) Modifier.border(2.dp, AccentTeal, RoundedCornerShape(8.dp)) else Modifier),
@@ -557,7 +564,6 @@ private fun PluginParameterControl(
     when (param) {
         is BooleanParameter -> {
             val checked = config[param.key] as? Boolean ?: param.defaultValue
-            var showTooltip by remember { mutableStateOf(false) }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
@@ -571,52 +577,17 @@ private fun PluginParameterControl(
                         checkmarkColor = Color.White,
                     ),
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = param.name,
-                    color = TextPrimary,
-                    fontSize = 13.sp,
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Box {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = pluginDescription,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clickable { showTooltip = !showTooltip },
-                        tint = if (showTooltip) AccentTeal else TextSecondary,
-                    )
-                    if (showTooltip) {
-                        Popup(
-                            alignment = Alignment.TopStart,
-                            onDismissRequest = { showTooltip = false },
-                        ) {
-                            Surface(
-                                color = Color(0xFF3A3F4B),
-                                shape = RoundedCornerShape(4.dp),
-                                elevation = 4.dp,
-                                modifier = Modifier.padding(top = 24.dp),
-                            ) {
-                                Text(
-                                    text = pluginDescription,
-                                    color = TextPrimary,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                )
-                            }
-                        }
-                    }
-                }
+                PluginParamLabel(name = param.name, description = pluginDescription)
             }
         }
+
         is IntParameter -> {
             // Placeholder for future int parameter controls
         }
+
         is StringParameter -> {
             val selected = config[param.key] as? String ?: param.defaultValue
             var expanded by remember { mutableStateOf(false) }
-            var showTooltip by remember { mutableStateOf(false) }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
@@ -650,42 +621,44 @@ private fun PluginParameterControl(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = param.name,
-                    color = TextPrimary,
-                    fontSize = 13.sp,
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Box {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = pluginDescription,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clickable { showTooltip = !showTooltip },
-                        tint = if (showTooltip) AccentTeal else TextSecondary,
+                PluginParamLabel(name = param.name, description = pluginDescription)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PluginParamLabel(name: String, description: String) {
+    var showTooltip by remember { mutableStateOf(false) }
+    Spacer(modifier = Modifier.width(8.dp))
+    Text(text = name, color = TextPrimary, fontSize = 13.sp)
+    Spacer(modifier = Modifier.width(6.dp))
+    Box {
+        Icon(
+            imageVector = Icons.Outlined.Info,
+            contentDescription = description,
+            modifier = Modifier
+                .size(18.dp)
+                .clickable { showTooltip = !showTooltip },
+            tint = if (showTooltip) AccentTeal else TextSecondary,
+        )
+        if (showTooltip) {
+            Popup(
+                alignment = Alignment.TopStart,
+                onDismissRequest = { showTooltip = false },
+            ) {
+                Surface(
+                    color = Color(0xFF3A3F4B),
+                    shape = RoundedCornerShape(4.dp),
+                    elevation = 4.dp,
+                    modifier = Modifier.padding(top = 24.dp),
+                ) {
+                    Text(
+                        text = description,
+                        color = TextPrimary,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     )
-                    if (showTooltip) {
-                        Popup(
-                            alignment = Alignment.TopStart,
-                            onDismissRequest = { showTooltip = false },
-                        ) {
-                            Surface(
-                                color = Color(0xFF3A3F4B),
-                                shape = RoundedCornerShape(4.dp),
-                                elevation = 4.dp,
-                                modifier = Modifier.padding(top = 24.dp),
-                            ) {
-                                Text(
-                                    text = pluginDescription,
-                                    color = TextPrimary,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
