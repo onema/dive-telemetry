@@ -153,6 +153,24 @@ The app provides:
 - Dynamic plugin controls generated from each plugin's parameter descriptors
 - Convert button that runs the full two-phase pipeline with configured plugins
 
+## Documentation
+
+Full documentation is available at [GitHub Pages](https://onema.github.io/dive-telemetry/).
+
+To build and preview docs locally:
+
+```bash
+npm install
+npm run docs:dev
+```
+
+The docs include:
+- [CLI usage guide](docs/cli-usage.md)
+- [Plugin system reference](docs/plugin-system.md)
+- [Architecture and domain model](docs/parsing-and-domain-model.md)
+- [Error handling patterns](docs/error-handling.md)
+- And more...
+
 ## CLI tool
 
 See **[docs/cli-usage.md](docs/cli-usage.md)** for usage, options, and build commands.

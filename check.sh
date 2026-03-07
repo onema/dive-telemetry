@@ -10,11 +10,11 @@ echo "==> detekt"
 echo "==> tests (JVM + macOS native)"
 ./gradlew :lib:jvmTest :lib:macosArm64Test :app:test :cli:jvmTest
 
-echo "==> docs (MkDocs build)"
-if command -v mkdocs &>/dev/null; then
-    mkdocs build --strict
+echo "==> docs (VitePress build)"
+if command -v npm &>/dev/null; then
+    npm run docs:build
 else
-    echo "     mkdocs not installed — skipping (pip install mkdocs-material)"
+    echo "     npm not installed — skipping (install Node.js)"
 fi
 
 echo ""
