@@ -11,7 +11,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class PlaygroundTest {
-
     @Test
     fun convertShearwaterCsv() {
         // Arrange

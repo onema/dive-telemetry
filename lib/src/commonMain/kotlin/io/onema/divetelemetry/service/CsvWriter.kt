@@ -8,7 +8,6 @@ import io.onema.divetelemetry.util.joinCsvFields
 import okio.BufferedSink
 
 class CsvWriter {
-
     companion object {
         private val BOM = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
         private const val CRLF = "\r\n"

@@ -17,7 +17,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class Dl7DiveLogParserTest {
-
     private fun bufferOf(text: String): Buffer = Buffer().apply { writeUtf8(text) }
 
     private fun parseOrFail(input: String): DiveLog = either<ParseError, DiveLog> {

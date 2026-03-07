@@ -11,7 +11,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ShearwaterConverterTest {
-
     private fun makeSample(
         timeSeconds: Long = 0L,
         depth: Double = 0.0,
@@ -214,11 +213,13 @@ class ShearwaterConverterTest {
     @Test
     fun `seconds computed from time`() {
         // Arrange
-        val log = makeDiveLog(listOf(
-            makeSample(timeSeconds = 65L),
-            makeSample(timeSeconds = 120L),
-            makeSample(timeSeconds = 3995L),
-        ))
+        val log = makeDiveLog(
+            listOf(
+                makeSample(timeSeconds = 65L),
+                makeSample(timeSeconds = 120L),
+                makeSample(timeSeconds = 3995L),
+            )
+        )
 
         // Act
         val output = UnifiedTelemetryConverter().convert(log)
@@ -304,11 +305,13 @@ class ShearwaterConverterTest {
     @Test
     fun `display minutes computed from time`() {
         // Arrange
-        val log = makeDiveLog(listOf(
-            makeSample(timeSeconds = 0L),
-            makeSample(timeSeconds = 65L),
-            makeSample(timeSeconds = 3995L),
-        ))
+        val log = makeDiveLog(
+            listOf(
+                makeSample(timeSeconds = 0L),
+                makeSample(timeSeconds = 65L),
+                makeSample(timeSeconds = 3995L),
+            )
+        )
 
         // Act
         val output = UnifiedTelemetryConverter().convert(log)
@@ -322,11 +325,13 @@ class ShearwaterConverterTest {
     @Test
     fun `display seconds computed from time`() {
         // Arrange
-        val log = makeDiveLog(listOf(
-            makeSample(timeSeconds = 0L),
-            makeSample(timeSeconds = 65L),
-            makeSample(timeSeconds = 3995L),
-        ))
+        val log = makeDiveLog(
+            listOf(
+                makeSample(timeSeconds = 0L),
+                makeSample(timeSeconds = 65L),
+                makeSample(timeSeconds = 3995L),
+            )
+        )
 
         // Act
         val output = UnifiedTelemetryConverter().convert(log)
@@ -340,13 +345,15 @@ class ShearwaterConverterTest {
     @Test
     fun `max depth tracks running maximum`() {
         // Arrange
-        val log = makeDiveLog(listOf(
-            makeSample(depth = 0.0),
-            makeSample(depth = 6.4),
-            makeSample(depth = 12.3),
-            makeSample(depth = 8.0),
-            makeSample(depth = 15.5),
-        ))
+        val log = makeDiveLog(
+            listOf(
+                makeSample(depth = 0.0),
+                makeSample(depth = 6.4),
+                makeSample(depth = 12.3),
+                makeSample(depth = 8.0),
+                makeSample(depth = 15.5),
+            )
+        )
 
         // Act
         val output = UnifiedTelemetryConverter().convert(log)

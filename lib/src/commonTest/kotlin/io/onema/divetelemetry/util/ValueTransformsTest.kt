@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ValueTransformsTest {
-
     // --- parseStartTimeSeconds ---
 
     @Test
@@ -49,7 +48,7 @@ class ValueTransformsTest {
         // Arrange / Act / Assert
         assertNull(parseStartTimeSeconds("not a date"))
         assertNull(parseStartTimeSeconds(""))
-        assertNull(parseStartTimeSeconds("12/7/2025 8:39 PM"))  // missing seconds
+        assertNull(parseStartTimeSeconds("12/7/2025 8:39 PM")) // missing seconds
     }
 
     // --- wallClockTime ---

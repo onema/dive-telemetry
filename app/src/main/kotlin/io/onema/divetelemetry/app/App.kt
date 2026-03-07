@@ -2,6 +2,8 @@ package io.onema.divetelemetry.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.Checkbox
@@ -27,15 +30,11 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.material.Button
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.draganddrop.dragAndDropTarget
-import androidx.compose.ui.window.Popup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -54,16 +53,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.window.Popup
 import io.onema.divetelemetry.plugins.BooleanParameter
 import io.onema.divetelemetry.plugins.DiveLogPlugin
 import io.onema.divetelemetry.plugins.EnforcePressureUnitPlugin
 import io.onema.divetelemetry.plugins.IntParameter
 import io.onema.divetelemetry.plugins.InterpolationPlugin
-import io.onema.divetelemetry.plugins.StringParameter
 import io.onema.divetelemetry.plugins.OutputPlugin
 import io.onema.divetelemetry.plugins.Plugin
 import io.onema.divetelemetry.plugins.PluginParameter
 import io.onema.divetelemetry.plugins.SafetyStopPlugin
+import io.onema.divetelemetry.plugins.StringParameter
 import io.onema.divetelemetry.plugins.TechnicalCCRPlugin
 import io.onema.divetelemetry.plugins.TechnicalOCPlugin
 import io.onema.divetelemetry.service.DiveComputerFormat
@@ -91,34 +91,37 @@ private val SuccessGreen = Color(0xFF4CAF50)
 private val ErrorRed = Color(0xFFEF5350)
 private val StatusBarBackground = Color(0xFF15171C)
 
-private val DarkColorPalette = Colors(
-    primary = AccentTeal,
-    primaryVariant = AccentTeal,
-    secondary = AccentTeal,
-    secondaryVariant = AccentTeal,
-    background = DarkBackground,
-    surface = CardBackground,
-    error = ErrorRed,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
-    onError = Color.White,
-    isLight = false,
-)
+private val DarkColorPalette =
+    Colors(
+        primary = AccentTeal,
+        primaryVariant = AccentTeal,
+        secondary = AccentTeal,
+        secondaryVariant = AccentTeal,
+        background = DarkBackground,
+        surface = CardBackground,
+        error = ErrorRed,
+        onPrimary = Color.White,
+        onSecondary = Color.White,
+        onBackground = TextPrimary,
+        onSurface = TextPrimary,
+        onError = Color.White,
+        isLight = false,
+    )
 
 private val availableFormats: List<DiveComputerFormat> = defaultComputerFormats
 
-private val availablePlugins: List<DiveLogPlugin> = listOf(
-    InterpolationPlugin,
-//    EnforcePressureUnitPlugin, // Disable as this is a toy plugin.
-)
+private val availablePlugins: List<DiveLogPlugin> =
+    listOf(
+        InterpolationPlugin,
+        EnforcePressureUnitPlugin, // Disable as this is a toy plugin.
+    )
 
-private val availableOutputPlugins: List<OutputPlugin> = listOf(
-    TechnicalOCPlugin,
-    TechnicalCCRPlugin,
-    SafetyStopPlugin,
-)
+private val availableOutputPlugins: List<OutputPlugin> =
+    listOf(
+        TechnicalOCPlugin,
+        TechnicalCCRPlugin,
+        SafetyStopPlugin,
+    )
 
 @Composable
 fun FrameWindowScope.App() {
@@ -130,17 +133,18 @@ fun FrameWindowScope.App() {
     var isConverting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val pluginState = remember {
-        val initial = mutableStateMapOf<String, MutableMap<String, Any>>()
-        for (plugin in availablePlugins + availableOutputPlugins) {
-            val defaults = mutableMapOf<String, Any>()
-            for (param in plugin.parameters) {
-                defaults[param.key] = param.defaultValue as Any
+    val pluginState =
+        remember {
+            val initial = mutableStateMapOf<String, MutableMap<String, Any>>()
+            for (plugin in availablePlugins + availableOutputPlugins) {
+                val defaults = mutableMapOf<String, Any>()
+                for (param in plugin.parameters) {
+                    defaults[param.key] = param.defaultValue as Any
+                }
+                initial[plugin.id] = defaults
             }
-            initial[plugin.id] = defaults
+            initial
         }
-        initial
-    }
 
     MaterialTheme(colors = DarkColorPalette) {
         Surface(color = DarkBackground, modifier = Modifier.fillMaxSize()) {
@@ -206,22 +210,23 @@ fun FrameWindowScope.App() {
                         val configuredOutputPlugins = buildOutputPluginList(pluginState)
 
                         scope.launch {
-                            val result = withContext(Dispatchers.IO) {
-                                val source = input.source().buffer()
-                                val sink = output.sink().buffer()
-                                try {
-                                    transformDiveLog(
-                                        source = source,
-                                        sink = sink,
-                                        format = selectedFormat,
-                                        plugins = configuredPlugins,
-                                        outputPlugins = configuredOutputPlugins,
-                                    )
-                                } finally {
-                                    source.close()
-                                    sink.close()
+                            val result =
+                                withContext(Dispatchers.IO) {
+                                    val source = input.source().buffer()
+                                    val sink = output.sink().buffer()
+                                    try {
+                                        transformDiveLog(
+                                            source = source,
+                                            sink = sink,
+                                            format = selectedFormat,
+                                            plugins = configuredPlugins,
+                                            outputPlugins = configuredOutputPlugins,
+                                        )
+                                    } finally {
+                                        source.close()
+                                        sink.close()
+                                    }
                                 }
-                            }
 
                             isConverting = false
                             result.fold(
@@ -240,30 +245,22 @@ fun FrameWindowScope.App() {
     }
 }
 
-private fun buildDiveLogPluginList(
-    pluginState: Map<String, Map<String, Any>>
-): List<DiveLogPlugin> {
+private fun buildDiveLogPluginList(pluginState: Map<String, Map<String, Any>>): List<DiveLogPlugin> {
     return availablePlugins.mapNotNull { plugin ->
         plugin.configure(pluginState[plugin.id] ?: emptyMap())
     }
 }
 
-private fun buildOutputPluginList(
-    pluginState: Map<String, Map<String, Any>>
-): List<OutputPlugin> {
-    return availableOutputPlugins.filter { plugin ->
-        val config = pluginState[plugin.id] ?: return@filter false
-        val enabledParam = plugin.parameters.filterIsInstance<BooleanParameter>().find { it.key == "enabled" }
-        enabledParam == null || config["enabled"] == true
-    }
-}
+private fun buildOutputPluginList(pluginState: Map<String, Map<String, Any>>): List<OutputPlugin> =
+    availableOutputPlugins.mapNotNull { it.configure(pluginState[it.id] ?: emptyMap()) }
 
 @Composable
 private fun AppHeader() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 20.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp, vertical = 20.dp),
     ) {
         Text(
             text = "DIVE TELEMETRY ",
@@ -274,7 +271,7 @@ private fun AppHeader() {
             modifier = Modifier.align(Alignment.Center),
         )
         Text(
-            text = "v${AppVersion.version}",
+            text = "v${AppVersion.VERSION}",
             color = TextSecondary,
             fontSize = 11.sp,
             modifier = Modifier.align(Alignment.CenterEnd),
@@ -332,42 +329,44 @@ private fun InputFileCard(
     onFileDrop: (File) -> Unit,
 ) {
     var isDragOver by remember { mutableStateOf(false) }
-    val dropTarget = remember {
-        object : DragAndDropTarget {
-            override fun onEntered(event: DragAndDropEvent) {
-                isDragOver = true
-            }
+    val dropTarget =
+        remember {
+            object : DragAndDropTarget {
+                override fun onEntered(event: DragAndDropEvent) {
+                    isDragOver = true
+                }
 
-            override fun onExited(event: DragAndDropEvent) {
-                isDragOver = false
-            }
+                override fun onExited(event: DragAndDropEvent) {
+                    isDragOver = false
+                }
 
-            override fun onEnded(event: DragAndDropEvent) {
-                isDragOver = false
-            }
+                override fun onEnded(event: DragAndDropEvent) {
+                    isDragOver = false
+                }
 
-            @Suppress("UNCHECKED_CAST")
-            override fun onDrop(event: DragAndDropEvent): Boolean {
-                isDragOver = false
-                val dropEvent = event.nativeEvent as? DropTargetDropEvent ?: return false
-                dropEvent.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY)
-                val files = dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<File>
-                val file = files?.firstOrNull() ?: return false
-                onFileDrop(file)
-                return true
+                @Suppress("UNCHECKED_CAST")
+                override fun onDrop(event: DragAndDropEvent): Boolean {
+                    isDragOver = false
+                    val dropEvent = event.nativeEvent as? DropTargetDropEvent ?: return false
+                    dropEvent.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY)
+                    val files = dropEvent.transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<File>
+                    val file = files?.firstOrNull() ?: return false
+                    onFileDrop(file)
+                    return true
+                }
             }
         }
-    }
     Card(
-        modifier = modifier
-            .dragAndDropTarget(
-                shouldStartDragAndDrop = { event ->
-                    val dragEvent = event.nativeEvent as? DropTargetDragEvent
-                    dragEvent?.isDataFlavorSupported(DataFlavor.javaFileListFlavor) == true
-                },
-                target = dropTarget,
-            )
-            .then(if (isDragOver) Modifier.border(2.dp, AccentTeal, RoundedCornerShape(8.dp)) else Modifier),
+        modifier =
+            modifier
+                .dragAndDropTarget(
+                    shouldStartDragAndDrop = { event ->
+                        val dragEvent = event.nativeEvent as? DropTargetDragEvent
+                        dragEvent?.isDataFlavorSupported(DataFlavor.javaFileListFlavor) == true
+                    },
+                    target = dropTarget,
+                )
+                .then(if (isDragOver) Modifier.border(2.dp, AccentTeal, RoundedCornerShape(8.dp)) else Modifier),
         backgroundColor = CardBackground,
         shape = RoundedCornerShape(8.dp),
         elevation = 4.dp,
@@ -454,13 +453,15 @@ private fun InputFileOptionsCard(
                     OutlinedButton(
                         onClick = { onDropdownExpandedChange(true) },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            backgroundColor = Color.Transparent,
-                            contentColor = TextPrimary,
-                        ),
-                        border = ButtonDefaults.outlinedBorder.copy(
-                            brush = SolidColor(AccentTeal),
-                        ),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                backgroundColor = Color.Transparent,
+                                contentColor = TextPrimary,
+                            ),
+                        border =
+                            ButtonDefaults.outlinedBorder.copy(
+                                brush = SolidColor(AccentTeal),
+                            ),
                         shape = RoundedCornerShape(4.dp),
                     ) {
                         Row(
@@ -527,10 +528,11 @@ private fun PluginSection(
                 letterSpacing = 1.sp,
             )
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(1.dp)
-                    .background(AccentTeal.copy(alpha = 0.3f)),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .height(1.dp)
+                        .background(AccentTeal.copy(alpha = 0.3f)),
             )
         }
         for (plugin in plugins) {
@@ -571,11 +573,12 @@ private fun PluginParameterControl(
                 Checkbox(
                     checked = checked,
                     onCheckedChange = { onParamChange(param.key, it) },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = AccentTeal,
-                        uncheckedColor = TextSecondary,
-                        checkmarkColor = Color.White,
-                    ),
+                    colors =
+                        CheckboxDefaults.colors(
+                            checkedColor = AccentTeal,
+                            uncheckedColor = TextSecondary,
+                            checkmarkColor = Color.White,
+                        ),
                 )
                 PluginParamLabel(name = param.name, description = pluginDescription)
             }
@@ -595,13 +598,15 @@ private fun PluginParameterControl(
                 Box {
                     OutlinedButton(
                         onClick = { expanded = true },
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            backgroundColor = Color.Transparent,
-                            contentColor = TextPrimary,
-                        ),
-                        border = ButtonDefaults.outlinedBorder.copy(
-                            brush = SolidColor(AccentTeal),
-                        ),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                backgroundColor = Color.Transparent,
+                                contentColor = TextPrimary,
+                            ),
+                        border =
+                            ButtonDefaults.outlinedBorder.copy(
+                                brush = SolidColor(AccentTeal),
+                            ),
                         shape = RoundedCornerShape(4.dp),
                     ) {
                         Text(selected.replaceFirstChar { it.uppercaseChar() }, fontSize = 13.sp)
@@ -628,7 +633,10 @@ private fun PluginParameterControl(
 }
 
 @Composable
-private fun PluginParamLabel(name: String, description: String) {
+private fun PluginParamLabel(
+    name: String,
+    description: String,
+) {
     var showTooltip by remember { mutableStateOf(false) }
     Spacer(modifier = Modifier.width(8.dp))
     Text(text = name, color = TextPrimary, fontSize = 13.sp)
@@ -637,9 +645,10 @@ private fun PluginParamLabel(name: String, description: String) {
         Icon(
             imageVector = Icons.Outlined.Info,
             contentDescription = description,
-            modifier = Modifier
-                .size(18.dp)
-                .clickable { showTooltip = !showTooltip },
+            modifier =
+                Modifier
+                    .size(18.dp)
+                    .clickable { showTooltip = !showTooltip },
             tint = if (showTooltip) AccentTeal else TextSecondary,
         )
         if (showTooltip) {
@@ -668,10 +677,11 @@ private fun PluginParamLabel(name: String, description: String) {
 @Composable
 private fun CardHeader(title: String) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(CardHeaderBackground, shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(CardHeaderBackground, shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Text(
             text = title,
@@ -696,13 +706,15 @@ private fun ActionButtons(
     ) {
         OutlinedButton(
             onClick = onChooseFile,
-            colors = ButtonDefaults.outlinedButtonColors(
-                backgroundColor = Color.Transparent,
-                contentColor = AccentTeal,
-            ),
-            border = ButtonDefaults.outlinedBorder.copy(
-                brush = SolidColor(AccentTeal),
-            ),
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    backgroundColor = Color.Transparent,
+                    contentColor = AccentTeal,
+                ),
+            border =
+                ButtonDefaults.outlinedBorder.copy(
+                    brush = SolidColor(AccentTeal),
+                ),
             shape = RoundedCornerShape(4.dp),
         ) {
             Text("Choose File...")
@@ -710,12 +722,13 @@ private fun ActionButtons(
         Button(
             onClick = onConvert,
             enabled = selectedFile != null && !isConverting,
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = AccentTeal,
-                contentColor = Color.White,
-                disabledBackgroundColor = AccentTeal.copy(alpha = 0.3f),
-                disabledContentColor = Color.White.copy(alpha = 0.5f),
-            ),
+            colors =
+                ButtonDefaults.buttonColors(
+                    backgroundColor = AccentTeal,
+                    contentColor = Color.White,
+                    disabledBackgroundColor = AccentTeal.copy(alpha = 0.3f),
+                    disabledContentColor = Color.White.copy(alpha = 0.5f),
+                ),
             shape = RoundedCornerShape(4.dp),
         ) {
             Text("Convert")
@@ -724,26 +737,32 @@ private fun ActionButtons(
 }
 
 @Composable
-private fun StatusBar(status: String, isConverting: Boolean, outputFile: File?) {
+private fun StatusBar(
+    status: String,
+    isConverting: Boolean,
+    outputFile: File?,
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier.fillMaxWidth().height(1.dp).background(AccentTeal.copy(alpha = 0.3f)),
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(StatusBarBackground)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(StatusBarBackground)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = status,
-                color = when {
-                    status.startsWith("Error") -> ErrorRed
-                    status.startsWith("Done") -> SuccessGreen
-                    else -> TextSecondary
-                },
+                color =
+                    when {
+                        status.startsWith("Error") -> ErrorRed
+                        status.startsWith("Done") -> SuccessGreen
+                        else -> TextSecondary
+                    },
                 fontSize = 12.sp,
                 modifier = Modifier.weight(1f),
             )
@@ -763,10 +782,11 @@ private fun StatusBar(status: String, isConverting: Boolean, outputFile: File?) 
                             desktop.open(outputFile.parentFile)
                         }
                     },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        backgroundColor = Color.Transparent,
-                        contentColor = SuccessGreen,
-                    ),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            backgroundColor = Color.Transparent,
+                            contentColor = SuccessGreen,
+                        ),
                     border = ButtonDefaults.outlinedBorder.copy(brush = SolidColor(SuccessGreen)),
                     shape = RoundedCornerShape(4.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp),

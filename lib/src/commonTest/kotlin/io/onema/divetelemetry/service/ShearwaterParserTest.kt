@@ -3,7 +3,6 @@ package io.onema.divetelemetry.service
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
-import io.onema.divetelemetry.service.ShearwaterFormat
 import io.onema.divetelemetry.domain.DepthUnit
 import io.onema.divetelemetry.domain.DiveLog
 import io.onema.divetelemetry.domain.TempUnit
@@ -16,7 +15,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class ShearwaterParserTest {
-
     private val sampleInput = """
         |Dive Number,GF Minimum,Product,Imperial Units,Start Date
         |398,20,Perdix 2,True,12/7/2025 8:39:59 PM

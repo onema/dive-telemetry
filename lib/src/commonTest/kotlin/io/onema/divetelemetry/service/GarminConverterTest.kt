@@ -11,7 +11,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class GarminConverterTest {
-
     private fun makeSample(
         timeSeconds: Long = 0L,
         depth: Double = 0.0,
@@ -236,12 +235,14 @@ class GarminConverterTest {
     @Test
     fun `max depth tracks running maximum`() {
         // Arrange
-        val log = makeLog(listOf(
-            makeSample(depth = 0.0),
-            makeSample(depth = 2.64),
-            makeSample(depth = 1.5),
-            makeSample(depth = 3.0),
-        ))
+        val log = makeLog(
+            listOf(
+                makeSample(depth = 0.0),
+                makeSample(depth = 2.64),
+                makeSample(depth = 1.5),
+                makeSample(depth = 3.0),
+            )
+        )
 
         // Act
         val output = UnifiedTelemetryConverter().convert(log)

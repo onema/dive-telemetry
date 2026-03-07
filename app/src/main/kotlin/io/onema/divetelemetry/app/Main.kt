@@ -6,12 +6,13 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 
-fun main() = application {
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "Dive Telemetry ",
-        state = rememberWindowState(size = DpSize(900.dp, 740.dp)),
-    ) {
-        App()
+fun main() =
+    application {
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = "Dive Telemetry ",
+            state = rememberWindowState(size = DpSize(900.dp, 740.dp)),
+        ) {
+            App()
+        }
     }
-}

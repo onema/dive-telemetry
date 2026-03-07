@@ -28,7 +28,7 @@ internal data class DevFieldDef(
  * Internal: a definition message describing the layout of subsequent data messages.
  */
 internal data class DefinitionMessage(
-    val architecture: Int,  // 0 = little-endian, 1 = big-endian
+    val architecture: Int, // 0 = little-endian, 1 = big-endian
     val globalMessageNumber: Int,
     val fieldDefs: List<FieldDef>,
     val devFieldDefs: List<DevFieldDef>
@@ -36,36 +36,36 @@ internal data class DefinitionMessage(
 
 // FIT base type sizes and invalid sentinels
 private val BASE_TYPE_SIZES = mapOf(
-    0x00 to 1,  // enum
-    0x01 to 1,  // sint8
-    0x02 to 1,  // uint8
-    0x83 to 2,  // sint16
-    0x84 to 2,  // uint16
-    0x85 to 4,  // sint32
-    0x86 to 4,  // uint32
-    0x88 to 4,  // float32
-    0x89 to 8,  // float64
-    0x8A to 1,  // uint8z
-    0x8B to 2,  // uint16z
-    0x8C to 4,  // uint32z
-    0x07 to 1,  // string (per-byte)
-    0x0D to 1,  // byte array (per-byte)
-    0x8E to 8,  // uint64
-    0x8F to 8,  // sint64
-    0x90 to 8,  // uint64z
+    0x00 to 1, // enum
+    0x01 to 1, // sint8
+    0x02 to 1, // uint8
+    0x83 to 2, // sint16
+    0x84 to 2, // uint16
+    0x85 to 4, // sint32
+    0x86 to 4, // uint32
+    0x88 to 4, // float32
+    0x89 to 8, // float64
+    0x8A to 1, // uint8z
+    0x8B to 2, // uint16z
+    0x8C to 4, // uint32z
+    0x07 to 1, // string (per-byte)
+    0x0D to 1, // byte array (per-byte)
+    0x8E to 8, // uint64
+    0x8F to 8, // sint64
+    0x90 to 8, // uint64z
 )
 
 private val INVALID_VALUES: Map<Int, Long> = mapOf(
-    0x00 to 0xFF,           // enum
-    0x01 to 0x7F,           // sint8
-    0x02 to 0xFF,           // uint8
-    0x83 to 0x7FFF,         // sint16
-    0x84 to 0xFFFF,         // uint16
-    0x85 to 0x7FFFFFFF,     // sint32
-    0x86 to 0xFFFFFFFFL,    // uint32
-    0x8A to 0x00,           // uint8z
-    0x8B to 0x0000,         // uint16z
-    0x8C to 0x00000000,     // uint32z
+    0x00 to 0xFF, // enum
+    0x01 to 0x7F, // sint8
+    0x02 to 0xFF, // uint8
+    0x83 to 0x7FFF, // sint16
+    0x84 to 0xFFFF, // uint16
+    0x85 to 0x7FFFFFFF, // sint32
+    0x86 to 0xFFFFFFFFL, // uint32
+    0x8A to 0x00, // uint8z
+    0x8B to 0x0000, // uint16z
+    0x8C to 0x00000000, // uint32z
 )
 
 /**
@@ -228,16 +228,19 @@ private fun readFieldValue(source: BufferedSource, fieldDef: FieldDef, architect
             val nullIdx = bytes.indexOf(0)
             if (nullIdx >= 0) bytes.decodeToString(0, nullIdx) else bytes.decodeToString()
         }
+
         // Byte array
         fullBaseType == 0x0D -> {
             source.readByteArray(fieldDef.size.toLong())
         }
+
         // sint8
         fullBaseType == 0x01 -> {
             val v = source.readByte().toLong()
             if (fieldDef.size > 1) source.skip((fieldDef.size - 1).toLong())
             if (v == INVALID_VALUES[0x01]) null else v
         }
+
         // uint8 / enum / uint8z
         fullBaseType == 0x02 || fullBaseType == 0x00 || fullBaseType == 0x8A -> {
             val v = source.readByte().toLong() and 0xFF
@@ -245,12 +248,14 @@ private fun readFieldValue(source: BufferedSource, fieldDef: FieldDef, architect
             val invalid = INVALID_VALUES[fullBaseType]
             if (invalid != null && v == invalid) null else v
         }
+
         // sint16
         fullBaseType == 0x83 -> {
             val v = readSint16(source, architecture)
             if (fieldDef.size > 2) source.skip((fieldDef.size - 2).toLong())
             if (v == INVALID_VALUES[0x83]) null else v
         }
+
         // uint16 / uint16z
         fullBaseType == 0x84 || fullBaseType == 0x8B -> {
             val v = readUint16(source, architecture).toLong()
@@ -258,12 +263,14 @@ private fun readFieldValue(source: BufferedSource, fieldDef: FieldDef, architect
             val invalid = INVALID_VALUES[fullBaseType]
             if (invalid != null && v == invalid) null else v
         }
+
         // sint32
         fullBaseType == 0x85 -> {
             val v = readSint32(source, architecture)
             if (fieldDef.size > 4) source.skip((fieldDef.size - 4).toLong())
             if (v == INVALID_VALUES[0x85]) null else v
         }
+
         // uint32 / uint32z
         fullBaseType == 0x86 || fullBaseType == 0x8C -> {
             val v = readUint32(source, architecture)
@@ -271,12 +278,14 @@ private fun readFieldValue(source: BufferedSource, fieldDef: FieldDef, architect
             val invalid = INVALID_VALUES[fullBaseType]
             if (invalid != null && v == invalid) null else v
         }
+
         // float32
         fullBaseType == 0x88 -> {
             val bits = readUint32(source, architecture).toInt()
             if (fieldDef.size > 4) source.skip((fieldDef.size - 4).toLong())
             Float.fromBits(bits).toDouble()
         }
+
         // float64
         fullBaseType == 0x89 -> {
             val bytes = source.readByteArray(fieldDef.size.toLong())
@@ -288,6 +297,7 @@ private fun readFieldValue(source: BufferedSource, fieldDef: FieldDef, architect
             }
             Double.fromBits(bits)
         }
+
         // uint64, sint64, uint64z — just read as long
         fullBaseType == 0x8E || fullBaseType == 0x8F || fullBaseType == 0x90 -> {
             val bytes = source.readByteArray(fieldDef.size.toLong())
@@ -297,6 +307,7 @@ private fun readFieldValue(source: BufferedSource, fieldDef: FieldDef, architect
                 (0 until 8).fold(0L) { acc, i -> acc or ((bytes[i].toLong() and 0xFF) shl ((7 - i) * 8)) }
             }
         }
+
         else -> {
             // Unknown base type — skip the bytes
             source.skip(fieldDef.size.toLong())

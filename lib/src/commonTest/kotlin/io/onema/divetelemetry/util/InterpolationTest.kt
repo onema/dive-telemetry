@@ -6,15 +6,12 @@ import io.onema.divetelemetry.domain.DiveMetadata
 import io.onema.divetelemetry.domain.DiveSample
 import io.onema.divetelemetry.domain.PressureUnit
 import io.onema.divetelemetry.domain.TempUnit
-import io.onema.divetelemetry.plugins.InterpolationPlugin
 import io.onema.divetelemetry.plugins.InterpolationPlugin.interpolateDiveLog
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class InterpolationTest {
-
     private val emptyMetadata = DiveMetadata(
         depthUnit = DepthUnit.FT,
         tempUnit = TempUnit.FAHRENHEIT,

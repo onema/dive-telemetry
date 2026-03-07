@@ -1,8 +1,8 @@
 package io.onema.divetelemetry.integration
 
 import arrow.core.getOrElse
-import io.onema.divetelemetry.service.ShearwaterFormat
 import io.onema.divetelemetry.plugins.InterpolationPlugin
+import io.onema.divetelemetry.service.ShearwaterFormat
 import io.onema.divetelemetry.service.transformDiveLog
 import okio.Buffer
 import okio.FileSystem
@@ -14,7 +14,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class EndToEndTransformTest {
-
     @Test
     fun fullPipelineMatchesExpectedOutput() {
         // Arrange

@@ -9,10 +9,13 @@ import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.SYSTEM
 import okio.buffer
-import kotlin.test.*
+import kotlin.test.DefaultAsserter.fail
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class FitDecoderTest {
-
     private fun decodeTestFile(): List<FitMessage> {
         val path = "src/commonTest/resources/ACTIVITY.fit".toPath()
         val source = FileSystem.SYSTEM.source(path).buffer()
@@ -169,7 +172,7 @@ class FitDecoderTest {
         // Arrange
         val buffer = Buffer()
         buffer.writeByte(14) // header size = 14, needs 13 more bytes
-        buffer.writeByte(0)  // only 1 more byte instead of 13
+        buffer.writeByte(0) // only 1 more byte instead of 13
 
         // Act
         val result = either<ParseError, List<FitMessage>> {

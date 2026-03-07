@@ -72,11 +72,15 @@ interface DiveLogPlugin : Plugin {
      * Returns a configured instance of this plugin based on [config], or `null` if the plugin
      * should be excluded from the pipeline (e.g. when "enabled" is false or the option is "default").
      *
-     * The default implementation handles the common [BooleanParameter] "enabled" pattern.
+     * The default implementation looks for a [BooleanParameter] with key `"enabled"` in [parameters].
+     * If none exists, the plugin is always included (e.g. externally configured plugins).
      * Override to support richer configuration (e.g. [StringParameter] with multiple choices).
      */
     fun configure(config: Map<String, Any>): DiveLogPlugin? {
-        val enabledParam = parameters.filterIsInstance<BooleanParameter>().find { it.key == "enabled" }
-        return if (enabledParam == null || config["enabled"] == true) this else null
+        val enabledParam = parameters.filterIsInstance<BooleanParameter>()
+            .firstOrNull { it.key == "enabled" }
+            ?: return this
+        val enabled = config[enabledParam.key] as? Boolean ?: enabledParam.defaultValue
+        return if (enabled) this else null
     }
 }

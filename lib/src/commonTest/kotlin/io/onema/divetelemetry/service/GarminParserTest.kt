@@ -2,7 +2,6 @@ package io.onema.divetelemetry.service
 
 import arrow.core.getOrElse
 import arrow.core.raise.either
-import io.onema.divetelemetry.service.GarminFormat
 import io.onema.divetelemetry.domain.DepthUnit
 import io.onema.divetelemetry.domain.DiveLog
 import io.onema.divetelemetry.domain.TempUnit
@@ -18,7 +17,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class GarminParserTest {
-
     private fun parseTestFile(): DiveLog {
         val path = "src/commonTest/resources/ACTIVITY.fit".toPath()
         val source = FileSystem.SYSTEM.source(path).buffer()
@@ -285,14 +283,12 @@ class GarminParserTest {
         val valueBytes: ByteArray,
     )
 
-    private fun uint32Bytes(value: Long): ByteArray {
-        return byteArrayOf(
-            (value and 0xFF).toByte(),
-            ((value shr 8) and 0xFF).toByte(),
-            ((value shr 16) and 0xFF).toByte(),
-            ((value shr 24) and 0xFF).toByte(),
-        )
-    }
+    private fun uint32Bytes(value: Long): ByteArray = byteArrayOf(
+        (value and 0xFF).toByte(),
+        ((value shr 8) and 0xFF).toByte(),
+        ((value shr 16) and 0xFF).toByte(),
+        ((value shr 24) and 0xFF).toByte(),
+    )
 
     @Test
     fun `rejects FIT file with no record messages containing depth`() {
@@ -351,10 +347,10 @@ class GarminParserTest {
         out.writeByte(0) // reserved
         out.writeByte(0) // little-endian
         out.writeByte(20) // global msg num low
-        out.writeByte(0)  // global msg num high
-        out.writeByte(1)  // 1 field
-        out.writeByte(0)  // field def num = 0 (not depth)
-        out.writeByte(1)  // size 1
+        out.writeByte(0) // global msg num high
+        out.writeByte(1) // 1 field
+        out.writeByte(0) // field def num = 0 (not depth)
+        out.writeByte(1) // size 1
         out.writeByte(0x02) // uint8
 
         // Data message for local type 0 (no depth)
@@ -366,8 +362,8 @@ class GarminParserTest {
         out.writeByte(0) // reserved
         out.writeByte(0) // little-endian
         out.writeByte(20) // global msg num low
-        out.writeByte(0)  // global msg num high
-        out.writeByte(2)  // 2 fields
+        out.writeByte(0) // global msg num high
+        out.writeByte(2) // 2 fields
         out.writeByte(253) // timestamp
         out.writeByte(4)
         out.writeByte(0x86) // uint32

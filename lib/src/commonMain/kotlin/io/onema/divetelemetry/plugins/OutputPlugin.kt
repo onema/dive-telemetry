@@ -24,4 +24,17 @@ interface OutputPlugin : Plugin {
      * @return One map per sample, ordered to match [DiveLog.samples].
      */
     fun Raise<PluginError>.computeRows(log: DiveLog): List<Map<String, String>>
+
+    /**
+     * Returns a configured instance of this plugin based on [config], or `null` if disabled.
+     * Looks for a [BooleanParameter] with key `"enabled"` in [parameters].
+     * If none exists, the plugin is always included.
+     */
+    fun configure(config: Map<String, Any>): OutputPlugin? {
+        val enabledParam = parameters.filterIsInstance<BooleanParameter>()
+            .firstOrNull { it.key == "enabled" }
+            ?: return this
+        val enabled = config[enabledParam.key] as? Boolean ?: enabledParam.defaultValue
+        return if (enabled) this else null
+    }
 }

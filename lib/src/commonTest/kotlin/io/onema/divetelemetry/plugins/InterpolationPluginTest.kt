@@ -17,7 +17,6 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class InterpolationPluginTest {
-
     private val metadata = DiveMetadata(
         depthUnit = DepthUnit.FT,
         tempUnit = TempUnit.FAHRENHEIT,
@@ -95,10 +94,10 @@ class InterpolationPluginTest {
         assertEquals("1-Second Interpolation", InterpolationPlugin.name)
         assertTrue(InterpolationPlugin.description.isNotBlank())
         assertEquals(1, InterpolationPlugin.parameters.size)
-        val param = InterpolationPlugin.parameters.first()
-        assertIs<BooleanParameter>(param)
-        assertEquals("enabled", param.key)
-        assertEquals(false, param.defaultValue)
+        val enabledParam = InterpolationPlugin.parameters.first()
+        assertIs<BooleanParameter>(enabledParam)
+        assertEquals("enabled", enabledParam.key)
+        assertEquals(false, enabledParam.defaultValue)
     }
 
     // --- DiveLogPlugin.configure() default implementation tests ---
@@ -128,7 +127,7 @@ class InterpolationPluginTest {
     }
 
     @Test
-    fun `configure returns this when no enabled key in config`() {
+    fun `configure returns null when no enabled key and parameter default is false`() {
         // Arrange
         val config = mapOf<String, Any>("other" to "value")
 
@@ -136,7 +135,7 @@ class InterpolationPluginTest {
         val result = InterpolationPlugin.configure(config)
 
         // Assert
-        assertSame(InterpolationPlugin, result)
+        assertNull(result)
     }
 
     @Test
@@ -147,6 +146,7 @@ class InterpolationPluginTest {
             override val name = "No Params"
             override val description = "Plugin with no parameters"
             override val parameters: List<PluginParameter<*>> = emptyList()
+
             override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog = diveLog
         }
 

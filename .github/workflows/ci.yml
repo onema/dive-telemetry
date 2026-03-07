@@ -34,9 +34,9 @@ jobs:
 
       - name: Upload detekt SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: '**/build/reports/detekt/detekt.sarif'
+          sarif_file: '**/build/reports/detekt/*.sarif'
 
       - name: Run tests (JVM + Linux native)
         run: ./gradlew :lib:jvmTest :lib:linuxX64Test :app:test :cli:jvmTest
@@ -59,15 +59,15 @@ jobs:
           cache: gradle
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: kotlin
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   secret-scanning:
     name: Secret Scanning
@@ -78,7 +78,7 @@ jobs:
           fetch-depth: 0
 
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@v3
+        uses: trufflesecurity/trufflehog@main
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}

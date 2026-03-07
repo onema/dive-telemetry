@@ -10,6 +10,12 @@ plugins {
 
 val appVersion: String by project
 
+ktlint {
+    filter {
+        exclude("**/build/**")
+    }
+}
+
 group = "io.onema"
 version = appVersion
 
@@ -29,18 +35,27 @@ val generateVersionFile by tasks.register("generateVersionFile") {
     outputs.file(file)
     doLast {
         file.asFile.parentFile.mkdirs()
-        file.asFile.writeText("""
+        file.asFile.writeText(
+            """
             package io.onema.divetelemetry.app
 
             object AppVersion {
-                const val version = "$appVersion"
+                const val VERSION = "$appVersion"
             }
-        """.trimIndent())
+            """.trimIndent() + "\n",
+        )
     }
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     dependsOn(generateVersionFile)
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    config.from(rootProject.file("detekt.yml"))
+    reports {
+        sarif.required.set(true)
+    }
 }
 
 dependencies {
