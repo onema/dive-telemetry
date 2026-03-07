@@ -3,18 +3,21 @@
 The plugin system has two phases, each with its own interface. Both extend the `Plugin` base interface.
 
 ```
-Source -> parse -> [DiveLogPlugin chain] -> convert (24 cols) -> [OutputPlugin chain] -> write -> Sink
+Source -> parse -> [DiveLogPlugin chain] -> [convert (24 cols)](converter.md) -> [OutputPlugin chain] -> write -> Sink
 ```
 
 Both plugin lists are passed as ordered arguments to `transformDiveLog()` — there is no global registry or state.
 
-The `parse` step produces a `DiveLog` — the typed domain model that both plugin phases operate on. See [Parsing and the domain model](parsing-and-domain-model.md) for the full type reference and parser contract.
+The `parse` step produces a `DiveLog`, the typed domain model that both plugin phases operate on.
+See [Parsing and the domain model](parsing-and-domain-model.md) for the full type reference and parser contract. The `convert` step then
+transforms this `DiveLog` into a base set of 24 columns, as detailed in [The Converter](converter.md).
 
 ---
 
 ## Phase 1 — `DiveLogPlugin` (pre-conversion)
 
-Transforms the typed `DiveLog` before it reaches the converter. Use this phase for operations that require typed field access, such as interpolation or sample filtering.
+Transforms the typed `DiveLog` before it reaches the converter. Use this phase for operations that require typed field access, such as
+interpolation or sample filtering.
 
 ```kotlin
 interface DiveLogPlugin : Plugin {
@@ -29,16 +32,17 @@ interface DiveLogPlugin : Plugin {
 
 Plugins in this phase receive and return a full `DiveLog`. They run in list order, each receiving the output of the previous one.
 
-| Plugin                        | Description                                                       |
-|-------------------------------|-------------------------------------------------------------------|
-| `InterpolationPlugin`         | Resamples dive samples to 1-second intervals                      |
-| `EnforcePressureUnitPlugin`   | Forces tank pressure columns to PSI or BAR regardless of source   |
+| Plugin                      | Description                                                     |
+|-----------------------------|-----------------------------------------------------------------|
+| `InterpolationPlugin`       | Resamples dive samples to 1-second intervals                    |
+| `EnforcePressureUnitPlugin` | Forces tank pressure columns to PSI or BAR regardless of source |
 
 ---
 
 ## Phase 2 — `OutputPlugin` (post-conversion)
 
-Appends columns to the `TelemetryOutput` after the core converter runs. Use this phase for computed display columns that don't need to modify the domain model.
+Appends columns to the `TelemetryOutput` after the core converter runs. Use this phase for computed display columns that don't need to
+modify the domain model.
 
 ```kotlin
 interface OutputPlugin : Plugin {
@@ -47,7 +51,8 @@ interface OutputPlugin : Plugin {
 }
 ```
 
-Each output plugin declares which column headers it adds and computes a value map for every sample. The pipeline merges columns from all output plugins into the base output in list order.
+Each output plugin declares which column headers it adds and computes a value map for every sample. The pipeline merges columns from all
+output plugins into the base output in list order.
 
 `computeRows()` **must** return exactly `log.samples.size` maps. The pipeline raises a `PluginError.ExecutionError` on mismatch.
 
@@ -80,7 +85,9 @@ interface Plugin {
 | `IntParameter`     | Number input | Option with value                           |
 | `StringParameter`  | Dropdown     | `.choice()` option (e.g. `--pressure-unit`) |
 
-`StringParameter` requires an `options: List<String>` of allowed values and a `defaultValue`. The UI renders a dropdown; the CLI uses Clikt's `.choice()`. Plugins with a `StringParameter` must override `configure()` to return a configured instance (or `null` for the no-op default).
+`StringParameter` requires an `options: List<String>` of allowed values and a `defaultValue`. The UI renders a dropdown; the CLI uses
+Clikt's `.choice()`. Plugins with a `StringParameter` must override `configure()` to return a configured instance (or `null` for the no-op
+default).
 
 ---
 
@@ -94,27 +101,31 @@ sealed interface PluginError : PipelineError {
 }
 ```
 
-Call `raise(PluginError.ExecutionError("reason"))` to signal failure. The pipeline propagates it as `Either.Left<PipelineError>` to the caller. See [error-handling.md](error-handling.md) for the full hierarchy.
+Call `raise(PluginError.ExecutionError("reason"))` to signal failure. The pipeline propagates it as `Either.Left<PipelineError>` to the
+caller. See [error-handling.md](error-handling.md) for the full hierarchy.
 
 ---
 
 ## Example — `EnforceBarPlugin`
 
-A complete `DiveLogPlugin` that converts tank pressure from PSI to BAR regardless of what the source computer recorded. This illustrates the two key responsibilities of a pre-conversion plugin: modifying `DiveMetadata` so the converter emits the right column headers, and transforming the sample values to match.
+A complete `DiveLogPlugin` that converts tank pressure from PSI to BAR regardless of what the source computer recorded. This illustrates the
+two key responsibilities of a pre-conversion plugin: modifying `DiveMetadata` so the converter emits the right column headers, and
+transforming the sample values to match.
 
-Tank pressure is stored as a `String` in `DiveSample` because Shearwater emits non-numeric sentinels like `"AI is off"` or `"N/A"`. The helper returns the original string unchanged when no numeric value is present.
+Tank pressure is stored as a `String` in `DiveSample` because Shearwater emits non-numeric sentinels like `"AI is off"` or `"N/A"`. The
+helper returns the original string unchanged when no numeric value is present.
 
 ```kotlin
 object EnforceBarPlugin : DiveLogPlugin {
-    override val id          = "example.enforce-bar"
-    override val name        = "Enforce BAR"
+    override val id = "example.enforce-bar"
+    override val name = "Enforce BAR"
     override val description = "Converts tank pressure from PSI to BAR regardless of the source unit."
 
     override val parameters: List<PluginParameter<*>> = listOf(
         BooleanParameter(
-            key          = "enabled",
-            name         = "Enforce BAR",
-            description  = "Convert tank pressure columns to BAR.",
+            key = "enabled",
+            name = "Enforce BAR",
+            description = "Convert tank pressure columns to BAR.",
             defaultValue = false,
         )
     )
@@ -151,9 +162,13 @@ object EnforceBarPlugin : DiveLogPlugin {
 ```
 
 Key points:
-- Modifying `metadata.pressureUnit` changes the column header from `Tank N pressure (psi)` to `Tank N pressure (bar)` — no converter code needs to change.
-- `formatTwoDecimals` is the shared formatting utility that produces correct output on all KMP targets (plain `Double.toString()` is not safe on Kotlin/Native).
-- The early return when `pressureUnit == BAR` makes the plugin safe to run unconditionally — Garmin logs are always metric/BAR and will pass through untouched.
+
+- Modifying `metadata.pressureUnit` changes the column header from `Tank N pressure (psi)` to `Tank N pressure (bar)` — no converter code
+  needs to change.
+- `formatTwoDecimals` is the shared formatting utility that produces correct output on all KMP targets (plain `Double.toString()` is not
+  safe on Kotlin/Native).
+- The early return when `pressureUnit == BAR` makes the plugin safe to run unconditionally — Garmin logs are always metric/BAR and will pass
+  through untouched.
 
 To register this plugin in the desktop app and CLI, see [Adding plugins to the UI and CLI](adding-plugins-to-ui-cli.md).
 
@@ -169,7 +184,7 @@ transformDiveLog(
     plugins = listOf(InterpolationPlugin),
     outputPlugins = listOf(TechnicalOCPlugin, TechnicalCCRPlugin, SafetyStopPlugin),
 ).fold(
-    ifLeft  = { error -> println("Failed: ${error.message}") },
+    ifLeft = { error -> println("Failed: ${error.message}") },
     ifRight = { println("Success") },
 )
 ```

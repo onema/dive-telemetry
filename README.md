@@ -4,14 +4,15 @@
 
 A Kotlin Multiplatform project that converts [Shearwater](https://www.shearwater.com/)
 and [Garmin](https://www.garmin.com/) dive computer exports into the CSV format that can be used
-by [Telemetry ](https://telemetry.com/) for videos. 
+by [Telemetry ](https://telemetry.com/) for videos.
 
 ## Purpose
 
 This project was created to convert my dive computer data from various sources, like Shearwater and Garmin, into a universal CSV format. I
 needed a standardized format to use my dive data with Telemetry Overlay for creating detailed video overlays.
 The CSV files I generate use specific header names that enable automatic unit conversions and ensure gauge compatibility within Telemetry
-Overlay. While my tool provides the necessary data foundation, you'll still need to create and configure your own "patterns" and gauges in the
+Overlay. While my tool provides the necessary data foundation, you'll still need to create and configure your own "patterns" and gauges in
+the
 Telemetry Overlay application. I've designed the output to be compatible with a wide range of Telemetry Overlay patterns, including those
 developed by Eric Stott, and the ones I've developed myself.
 
@@ -33,8 +34,29 @@ and CRLF line endings.
 Source -> parse -> [DiveLogPlugin chain] -> convert (24 cols) -> [OutputPlugin chain] -> write -> Sink
 ```
 
-The core converter produces 24 columns. Output plugins add additional columns on demand, up to 49 columns when all three
-built-in output plugins are enabled.
+### Design Philosophy: The Two-Phase Plugin System
+
+The plugin system is intentionally split into two distinct phases to create a clear and robust data processing workflow. While both plugin
+types operate on the same `DiveLog` data, they serve fundamentally different purposes:
+
+1. **Phase 1: `DiveLogPlugin` (Pre-conversion) - Modifying the Source of Truth**
+   These plugins are for cleaning, correcting, or transforming the fundamental dive data itself. They can add, remove, or change
+   `DiveSample`s in a sequential chain, where the output of one plugin becomes the input for the next. This phase is about preparing the
+   final, authoritative version of the dive log *before* any output is generated.
+    * **Analogy:** Preparing raw ingredients before baking a cake (e.g., sifting flour, filtering water).
+    * **Example:** The `InterpolationPlugin` fills in missing data points, creating a new, denser "source of truth" that all subsequent
+      steps will see.
+
+2. **Phase 2: `OutputPlugin` (Post-conversion) - Creating New Views of the Data**
+   These plugins are for computing and adding new columns to the final CSV output *without* changing the underlying `DiveLog`. They run in
+   parallel, all looking at the same final, cleaned-up `DiveLog` produced by Phase 1. This ensures that all output calculations are based on
+   a consistent and stable dataset.
+    * **Analogy:** Decorating the finished cake (e.g., adding frosting, writing a message).
+    * **Example:** The `ElapsedMinutesPlugin` adds a new column by calculating a value from the `DiveLog`'s `timeSeconds` field, but it
+      doesn't alter the `DiveLog` itself.
+
+This two-phase design guarantees that all display-oriented calculations in the second phase operate on a predictable and finalized dataset,
+preventing complex and unpredictable interactions between plugins.
 
 ### Supported formats
 
