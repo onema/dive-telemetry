@@ -25,12 +25,12 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api("com.squareup.okio:okio:3.9.1")
+            api("com.squareup.okio:okio:3.16.4")
             api("io.arrow-kt:arrow-core:2.2.1")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
-            implementation("com.squareup.okio:okio-fakefilesystem:3.9.1")
+            implementation("com.squareup.okio:okio-fakefilesystem:3.16.4")
         }
     }
 }
