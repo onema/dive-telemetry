@@ -7,13 +7,12 @@ import io.onema.divetelemetry.error.ParseError
 import okio.Buffer
 import okio.FileSystem
 import okio.Path.Companion.toPath
-import okio.SYSTEM
 import okio.buffer
-import kotlin.test.DefaultAsserter.fail
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class FitDecoderTest {
     private fun decodeTestFile(): List<FitMessage> {

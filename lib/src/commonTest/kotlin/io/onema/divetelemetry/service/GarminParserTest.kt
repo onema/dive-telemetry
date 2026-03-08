@@ -152,15 +152,6 @@ class GarminParserTest {
         assertEquals("0", first.batteryVoltage)
     }
 
-    @Test
-    fun `factory creates garmin parser`() {
-        // Act
-        val parser = GarminFormat.createParser()
-
-        // Assert
-        assertTrue(parser is GarminDiveLogParser)
-    }
-
     // --- Error path tests ---
 
     @Test

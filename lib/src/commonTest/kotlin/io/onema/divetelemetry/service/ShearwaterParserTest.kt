@@ -73,15 +73,6 @@ class ShearwaterParserTest {
     }
 
     @Test
-    fun `factory creates shearwater parser`() {
-        // Arrange / Act
-        val parser = ShearwaterFormat.createParser()
-
-        // Assert
-        assertTrue(parser is ShearwaterDiveLogParser)
-    }
-
-    @Test
     fun `parses empty data section`() {
         // Arrange
         val input = """

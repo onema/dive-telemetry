@@ -100,34 +100,46 @@ fun Raise<ParseError>.decodeFitFile(source: BufferedSource): List<FitMessage> {
     // headerRest may have 2 more bytes (CRC) if headerSize == 14, already consumed
 
     // --- Data Records ---
-    val definitions = mutableMapOf<Int, DefinitionMessage>()
-    val messages = mutableListOf<FitMessage>()
-    var bytesRead = 0L
+    tailrec fun parseRecords(
+        bytesRead: Long,
+        definitions: Map<Int, DefinitionMessage>,
+        messages: List<FitMessage>,
+    ): List<FitMessage> {
+        if (bytesRead >= dataSize) return messages
 
-    while (bytesRead < dataSize) {
         ensure(source.request(1)) { ParseError.InvalidFitFile("truncated data at offset $bytesRead") }
         val recordHeader = source.readByte().toInt() and 0xFF
-        bytesRead++
 
-        if (recordHeader and 0x80 != 0) {
-            // Compressed timestamp header
-            val localType = (recordHeader shr 5) and 0x03
-            val def = definitions[localType]
-                ?: run { raise(ParseError.InvalidFitFile("compressed timestamp for undefined local type $localType")) }
-            bytesRead += readDataMessage(source, def, messages)
-        } else if (recordHeader and 0x40 != 0) {
-            // Definition message
-            val hasDeveloperData = (recordHeader and 0x20) != 0
-            val localType = recordHeader and 0x0F
-            bytesRead += readDefinitionMessage(source, localType, hasDeveloperData, definitions)
-        } else {
-            // Normal data message
-            val localType = recordHeader and 0x0F
-            val def = definitions[localType]
-                ?: run { raise(ParseError.InvalidFitFile("data message for undefined local type $localType")) }
-            bytesRead += readDataMessage(source, def, messages)
+        return when {
+            recordHeader and 0x80 != 0 -> {
+                // Compressed timestamp header
+                val localType = (recordHeader shr 5) and 0x03
+                val def = definitions[localType]
+                    ?: run { raise(ParseError.InvalidFitFile("compressed timestamp for undefined local type $localType")) }
+                val (bytes, msg) = readDataMessage(source, def)
+                parseRecords(bytesRead + 1 + bytes, definitions, messages + msg)
+            }
+
+            recordHeader and 0x40 != 0 -> {
+                // Definition message
+                val hasDeveloperData = (recordHeader and 0x20) != 0
+                val localType = recordHeader and 0x0F
+                val (bytes, def) = readDefinitionMessage(source, hasDeveloperData)
+                parseRecords(bytesRead + 1 + bytes, definitions + (localType to def), messages)
+            }
+
+            else -> {
+                // Normal data message
+                val localType = recordHeader and 0x0F
+                val def = definitions[localType]
+                    ?: run { raise(ParseError.InvalidFitFile("data message for undefined local type $localType")) }
+                val (bytes, msg) = readDataMessage(source, def)
+                parseRecords(bytesRead + 1 + bytes, definitions, messages + msg)
+            }
         }
     }
+
+    val messages = parseRecords(0L, emptyMap(), emptyList())
 
     // Skip the 2-byte file CRC at the end (if present)
     if (source.request(2)) {
@@ -138,81 +150,72 @@ fun Raise<ParseError>.decodeFitFile(source: BufferedSource): List<FitMessage> {
 }
 
 /**
- * Read a definition message from source. Returns number of bytes consumed.
+ * Read a definition message from source. Returns (bytes consumed, definition message).
  */
 private fun Raise<ParseError>.readDefinitionMessage(
     source: BufferedSource,
-    localType: Int,
-    hasDeveloperData: Boolean,
-    definitions: MutableMap<Int, DefinitionMessage>
-): Long {
+    hasDeveloperData: Boolean
+): Pair<Long, DefinitionMessage> {
     ensure(source.request(5)) { ParseError.InvalidFitFile("truncated definition message") }
     source.readByte() // reserved byte
     val architecture = source.readByte().toInt() and 0xFF
     val globalMsgNum = readUint16(source, architecture)
     val numFields = source.readByte().toInt() and 0xFF
-    var consumed = 5L
 
-    val fieldDefs = mutableListOf<FieldDef>()
-    for (i in 0 until numFields) {
+    val fieldDefs = (0 until numFields).map {
         ensure(source.request(3)) { ParseError.InvalidFitFile("truncated field definition") }
-        val fieldDefNum = source.readByte().toInt() and 0xFF
-        val size = source.readByte().toInt() and 0xFF
-        val baseType = source.readByte().toInt() and 0xFF
-        fieldDefs.add(FieldDef(fieldDefNum, size, baseType))
-        consumed += 3
+        FieldDef(
+            fieldDefNum = source.readByte().toInt() and 0xFF,
+            size = source.readByte().toInt() and 0xFF,
+            baseType = source.readByte().toInt() and 0xFF,
+        )
     }
 
-    val devFieldDefs = mutableListOf<DevFieldDef>()
-    if (hasDeveloperData) {
+    val (devFieldDefs, devConsumed) = if (hasDeveloperData) {
         ensure(source.request(1)) { ParseError.InvalidFitFile("truncated dev field count") }
         val numDevFields = source.readByte().toInt() and 0xFF
-        consumed++
-        for (i in 0 until numDevFields) {
+        val defs = (0 until numDevFields).map {
             ensure(source.request(3)) { ParseError.InvalidFitFile("truncated dev field definition") }
-            val fieldNum = source.readByte().toInt() and 0xFF
-            val size = source.readByte().toInt() and 0xFF
-            val devDataIndex = source.readByte().toInt() and 0xFF
-            devFieldDefs.add(DevFieldDef(fieldNum, size, devDataIndex))
-            consumed += 3
+            DevFieldDef(
+                fieldNum = source.readByte().toInt() and 0xFF,
+                size = source.readByte().toInt() and 0xFF,
+                devDataIndex = source.readByte().toInt() and 0xFF,
+            )
         }
+        defs to (1L + numDevFields * 3L)
+    } else {
+        emptyList<DevFieldDef>() to 0L
     }
 
-    definitions[localType] = DefinitionMessage(architecture, globalMsgNum, fieldDefs, devFieldDefs)
-    return consumed
+    val consumed = 5L + numFields * 3L + devConsumed
+    return consumed to DefinitionMessage(architecture, globalMsgNum, fieldDefs, devFieldDefs)
 }
 
 /**
- * Read a data message according to its definition. Returns number of bytes consumed.
+ * Read a data message according to its definition. Returns (bytes consumed, fit message).
  */
 private fun Raise<ParseError>.readDataMessage(
     source: BufferedSource,
-    def: DefinitionMessage,
-    messages: MutableList<FitMessage>
-): Long {
-    val fields = mutableMapOf<Int, Any?>()
-    var consumed = 0L
-
-    for (fieldDef in def.fieldDefs) {
+    def: DefinitionMessage
+): Pair<Long, FitMessage> {
+    val (fieldsConsumed, fields) = def.fieldDefs.fold(0L to emptyMap<Int, Any?>()) { (acc, map), fieldDef ->
         ensure(source.request(fieldDef.size.toLong())) {
             ParseError.InvalidFitFile("truncated data field ${fieldDef.fieldDefNum}")
         }
         val value = readFieldValue(source, fieldDef, def.architecture)
-        fields[fieldDef.fieldDefNum] = value
-        consumed += fieldDef.size
+        (acc + fieldDef.size) to (map + (fieldDef.fieldDefNum to value))
     }
 
     // Skip developer fields
-    for (devField in def.devFieldDefs) {
+    val devConsumed = def.devFieldDefs.fold(0L) { acc, devField ->
         ensure(source.request(devField.size.toLong())) {
             ParseError.InvalidFitFile("truncated dev data field")
         }
         source.skip(devField.size.toLong())
-        consumed += devField.size
+        acc + devField.size
     }
 
-    messages.add(FitMessage(def.globalMessageNumber, fields))
-    return consumed
+    return (fieldsConsumed + devConsumed) to FitMessage(def.globalMessageNumber, fields)
 }
 
 /**
