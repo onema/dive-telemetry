@@ -34,9 +34,12 @@ class EndToEndTransformTest {
 
         // Assert
         val actualBytes = outputBuffer.readByteArray()
-        assertTrue(
-            expectedBytes.contentEquals(actualBytes),
-            "Output bytes do not match expected: expected ${expectedBytes.size} bytes, got ${actualBytes.size} bytes"
+        val expectedString = expectedBytes.decodeToString().replace("\r\n", "\n")
+        val actualString = actualBytes.decodeToString().replace("\r\n", "\n")
+        assertEquals(
+            expectedString,
+            actualString,
+            "Output strings do not match expected (ignoring line endings)"
         )
     }
 

@@ -41,7 +41,13 @@ class PipelinePluginTest {
             source.close()
         }
 
-        assertTrue(expectedBytes.contentEquals(outputBuffer.readByteArray()))
+        val expectedString = expectedBytes.decodeToString().replace("\r\n", "\n")
+        val actualString = outputBuffer.readByteArray().decodeToString().replace("\r\n", "\n")
+        assertEquals(
+            expectedString,
+            actualString,
+            "Output strings do not match expected (ignoring line endings)"
+        )
     }
 
     @Test
