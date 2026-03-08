@@ -32,11 +32,20 @@ jobs:
       - name: Run detekt
         run: ./gradlew detekt
 
+      - name: Gather detekt SARIF
+        if: always()
+        run: |
+          mkdir -p detekt-reports
+          find . -name "*.sarif" -path "*/build/reports/detekt/*" | while read -r file; do
+            module=$(echo "$file" | cut -d'/' -f2)
+            cp "$file" "detekt-reports/${module}-detekt.sarif"
+          done
+
       - name: Upload detekt SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: '**/build/reports/detekt/*.sarif'
+          sarif_file: detekt-reports/
 
       - name: Run tests (JVM + Linux native)
         run: ./gradlew :lib:jvmTest :lib:linuxX64Test :app:test :cli:jvmTest
