@@ -6,6 +6,8 @@ A Kotlin Multiplatform project that converts [Shearwater](https://www.shearwater
 and [Garmin](https://www.garmin.com/) dive computer exports into the CSV format that can be used
 by [Telemetry ](https://telemetry.com/) for videos.
 
+![Dive Telemetry](docs/img/dive-telemetry-ui.png)]
+
 ## Purpose
 
 This project was created to convert my dive computer data from various sources, like Shearwater and Garmin, into a universal CSV format. I
