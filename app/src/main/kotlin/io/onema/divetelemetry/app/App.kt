@@ -56,7 +56,6 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.Popup
 import io.onema.divetelemetry.plugins.BooleanParameter
 import io.onema.divetelemetry.plugins.DiveLogPlugin
-import io.onema.divetelemetry.plugins.EnforcePressureUnitPlugin
 import io.onema.divetelemetry.plugins.IntParameter
 import io.onema.divetelemetry.plugins.InterpolationPlugin
 import io.onema.divetelemetry.plugins.OutputPlugin
@@ -113,7 +112,7 @@ private val availableFormats: List<DiveComputerFormat> = defaultComputerFormats
 private val availablePlugins: List<DiveLogPlugin> =
     listOf(
         InterpolationPlugin,
-        EnforcePressureUnitPlugin, // Disable as this is a toy plugin.
+        // EnforcePressureUnitPlugin, // Disable as this is a toy plugin.
     )
 
 private val availableOutputPlugins: List<OutputPlugin> =

@@ -235,3 +235,7 @@ Extensive tests across most files covering parsing, conversion, interpolation, C
 
 `:lib` and `:cli` target: `jvm`, `macosArm64`, `macosX64`, `linuxX64`, `mingwX64`.
 Linux and Windows binaries are cross-compiled from macOS -- not CI-validated.
+
+## Future Work
+
+Walkthrough on how to use the telemetry data in Telemetry Overlay to generate dive gauges, port and publish existing patterns to use the generated files.

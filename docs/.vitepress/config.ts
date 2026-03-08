@@ -7,12 +7,13 @@ export default defineConfig({
   appearance: 'dark',
 
   themeConfig: {
-    logo: '/logo.svg',
+    logo: '/img/dive-telemetry-logo.svg',
 
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Plugin System', link: '/plugin-system.md' },
+      { text: 'UI', link: '/ui-usage.md' },
       { text: 'CLI', link: '/cli-usage.md' },
+      { text: 'Plugin System', link: '/plugin-system.md' },
       { text: 'GitHub', link: 'https://github.com/onema/dive-telemetry' }
     ],
 
@@ -22,6 +23,7 @@ export default defineConfig({
           text: 'Getting Started',
           items: [
             { text: 'Home', link: '/' },
+            { text: 'UI Usage', link: '/ui-usage.md' },
             { text: 'CLI Usage', link: '/cli-usage.md' }
           ]
         },
