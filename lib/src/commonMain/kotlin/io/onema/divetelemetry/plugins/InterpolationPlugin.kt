@@ -14,10 +14,10 @@ object InterpolationPlugin : DiveLogPlugin {
     override val parameters: List<PluginParameter<*>> = listOf(
         BooleanParameter(
             key = "enabled",
-            name = "Enable Interpolation",
-            description = "Interpolate samples to 1-second intervals.",
-            defaultValue = false
-        )
+            name = name,
+            description = description,
+            defaultValue = false,
+        ),
     )
 
     override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {

@@ -18,7 +18,15 @@ object DeepHalfPlugin : DiveLogPlugin {
     override val id          = "example.deep-half"
     override val name        = "Deep Half"
     override val description = "Keeps only samples from the deepest half of the dive."
-    override val parameters: List<PluginParameter<*>> = emptyList()
+
+    override val parameters: List<PluginParameter<*>> = listOf(
+        BooleanParameter(
+            key          = "enabled",
+            name         = "Deep Half",
+            description  = description,
+            defaultValue = false,
+        )
+    )
 
     override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
         val maxDepth  = diveLog.samples.maxOfOrNull { it.depth }
@@ -31,6 +39,7 @@ object DeepHalfPlugin : DiveLogPlugin {
 
 Key rules:
 - Implement as an `object` (singleton) unless the plugin requires instance state.
+- Declare a `BooleanParameter` with `key = "enabled"` to expose an on/off toggle. The `defaultValue` controls whether the plugin is included by default.
 - Call `raise(PluginError.ExecutionError("reason"))` to signal failure — do not throw exceptions.
 - Return a new `DiveLog`; `DiveSample` and `DiveLog` are immutable data classes, use `copy()`.
 
@@ -53,7 +62,15 @@ object ElapsedMinutesPlugin : OutputPlugin {
     override val id          = "example.elapsed-minutes"
     override val name        = "Elapsed Minutes"
     override val description = "Adds elapsed dive time in decimal minutes."
-    override val parameters: List<PluginParameter<*>> = emptyList()
+
+    override val parameters: List<PluginParameter<*>> = listOf(
+        BooleanParameter(
+            key          = "enabled",
+            name         = "Elapsed Minutes",
+            description  = description,
+            defaultValue = false,
+        )
+    )
 
     override fun additionalHeaders(metadata: DiveMetadata): List<String> =
         listOf("Elapsed Minutes (text)")
@@ -97,7 +114,7 @@ object ThresholdPlugin : DiveLogPlugin {
 }
 ```
 
-For `StringParameter` with a discrete set of choices, override `configure()` to return a configured instance (or `null` to exclude the plugin from the pipeline). The `object` itself acts as the descriptor; the inner class holds the resolved configuration:
+For `StringParameter` with a discrete set of choices, override `configure()` to return a configured instance (or `null` to exclude the plugin from the pipeline). No `BooleanParameter("enabled")` is needed — the `StringParameter`'s `defaultValue` controls the off state, and the UI renders only a dropdown (no separate checkbox). The `object` itself acts as the descriptor; the inner class holds the resolved configuration:
 
 ```kotlin
 object ModePlugin : DiveLogPlugin {

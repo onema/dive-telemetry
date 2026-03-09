@@ -24,7 +24,8 @@ interface DiveLogPlugin : Plugin {
     fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog
 
     // Returns a configured instance of this plugin, or null to exclude it from the pipeline.
-    // Default implementation handles BooleanParameter("enabled"): returns null when unchecked.
+    // Default: looks for BooleanParameter("enabled") in parameters and uses its defaultValue as fallback.
+    // If no such parameter exists, the plugin is always included.
     // Override for richer configuration (e.g. StringParameter with multiple choices).
     fun configure(config: Map<String, Any>): DiveLogPlugin?
 }
@@ -73,21 +74,25 @@ interface Plugin {
     val id: String                            // Stable unique identifier (e.g. "core.interpolation")
     val name: String                          // Human-readable label for UI and logs
     val description: String                   // Shown in UI tooltips and CLI --help text
-    val parameters: List<PluginParameter<*>>  // Configurable options; UI generates controls from these
+    val parameters: List<PluginParameter<*>>  // Single source of truth for all configurable options
 }
 ```
 
+The `parameters` list is the **single source of truth** for plugin configuration. The UI generates controls from it; the CLI maps parameters to flags. There is no separate `defaultEnabled` property — a plugin's enabled state is expressed through its parameters.
+
 ### PluginParameter types
 
-| Type               | UI control   | CLI mapping                                 |
-|--------------------|--------------|---------------------------------------------|
-| `BooleanParameter` | Checkbox     | Flag (e.g. `--interpolate`)                 |
-| `IntParameter`     | Number input | Option with value                           |
-| `StringParameter`  | Dropdown     | `.choice()` option (e.g. `--pressure-unit`) |
+| Type               | UI control | CLI mapping                                 |
+|--------------------|------------|---------------------------------------------|
+| `BooleanParameter` | Checkbox   | Flag (e.g. `--interpolate`)                 |
+| `IntParameter`     | Number input | Option with value                         |
+| `StringParameter`  | Dropdown   | `.choice()` option (e.g. `--pressure-unit`) |
 
-`StringParameter` requires an `options: List<String>` of allowed values and a `defaultValue`. The UI renders a dropdown; the CLI uses
-Clikt's `.choice()`. Plugins with a `StringParameter` must override `configure()` to return a configured instance (or `null` for the no-op
-default).
+**On/off plugins** declare a `BooleanParameter` with `key = "enabled"`. The default `configure()` implementation looks for this parameter and uses its `defaultValue` as the fallback. If no such parameter exists, the plugin is always included.
+
+**Multi-choice plugins** (e.g. `EnforcePressureUnitPlugin`) use a `StringParameter` and override `configure()` to return a configured instance or `null` for the no-op default value. The UI renders only the dropdown — no separate checkbox.
+
+`StringParameter` requires an `options: List<String>` of allowed values and a `defaultValue`.
 
 ---
 
@@ -108,9 +113,12 @@ caller. See [error-handling.md](error-handling.md) for the full hierarchy.
 
 ## Example — `EnforceBarPlugin`
 
-A complete `DiveLogPlugin` that converts tank pressure from PSI to BAR regardless of what the source computer recorded. This illustrates the
-two key responsibilities of a pre-conversion plugin: modifying `DiveMetadata` so the converter emits the right column headers, and
-transforming the sample values to match.
+A complete `DiveLogPlugin` that uses a `StringParameter` to let the user choose a pressure unit. The `defaultValue = "default"` means
+"keep the source unit" — when selected, `configure()` returns `null` and the plugin is excluded from the pipeline. In the UI this renders
+as a dropdown only (no separate checkbox).
+
+This illustrates the two key responsibilities of a pre-conversion plugin: modifying `DiveMetadata` so the converter emits the right column
+headers, and transforming the sample values to match.
 
 Tank pressure is stored as a `String` in `DiveSample` because Shearwater emits non-numeric sentinels like `"AI is off"` or `"N/A"`. The
 helper returns the original string unchanged when no numeric value is present.
@@ -118,57 +126,72 @@ helper returns the original string unchanged when no numeric value is present.
 ```kotlin
 object EnforceBarPlugin : DiveLogPlugin {
     override val id = "example.enforce-bar"
-    override val name = "Enforce BAR"
-    override val description = "Converts tank pressure from PSI to BAR regardless of the source unit."
+    override val name = "Pressure Unit"
+    override val description = "Output tank pressure in a specific unit regardless of the source."
 
     override val parameters: List<PluginParameter<*>> = listOf(
-        BooleanParameter(
-            key = "enabled",
-            name = "Enforce BAR",
-            description = "Convert tank pressure columns to BAR.",
-            defaultValue = false,
+        StringParameter(
+            key = "unit",
+            name = "Pressure Unit",
+            description = description,
+            defaultValue = "default",               // "default" = no-op, excluded from pipeline
+            options = listOf("default", "psi", "bar"),
         )
     )
 
+    override fun configure(config: Map<String, Any>): DiveLogPlugin? = when (config["unit"] as? String) {
+        "psi" -> Configured(PressureUnit.PSI)
+        "bar" -> Configured(PressureUnit.BAR)
+        else  -> null   // "default" or missing — excluded from pipeline
+    }
+
+    // Unreachable — configure() always returns a Configured instance or null.
+    override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog = diveLog
+
     private const val PSI_TO_BAR = 0.0689476
 
-    override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
-        // No-op if the source is already in BAR.
-        if (diveLog.metadata.pressureUnit == PressureUnit.BAR) {
-            return diveLog
-        } else {
+    private class Configured(private val target: PressureUnit) : DiveLogPlugin {
+        override val id = EnforceBarPlugin.id
+        override val name = EnforceBarPlugin.name
+        override val description = EnforceBarPlugin.description
+        override val parameters = EnforceBarPlugin.parameters
+
+        override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
+            if (diveLog.metadata.pressureUnit == target) return diveLog
+
             val convertedSamples = diveLog.samples.map { sample ->
                 sample.copy(
-                    tankPressure1 = psiToBar(sample.tankPressure1),
-                    tankPressure2 = psiToBar(sample.tankPressure2),
-                    tankPressure3 = psiToBar(sample.tankPressure3),
-                    tankPressure4 = psiToBar(sample.tankPressure4),
+                    tankPressure1 = convert(sample.tankPressure1),
+                    tankPressure2 = convert(sample.tankPressure2),
+                    tankPressure3 = convert(sample.tankPressure3),
+                    tankPressure4 = convert(sample.tankPressure4),
                 )
             }
 
             return diveLog.copy(
-                metadata = diveLog.metadata.copy(pressureUnit = PressureUnit.BAR),
+                metadata = diveLog.metadata.copy(pressureUnit = target),
                 samples = convertedSamples,
             )
         }
-    }
 
-    // Non-numeric sentinels (e.g. "AI is off", "N/A") pass through unchanged.
-    private fun psiToBar(value: String): String {
-        val psi = value.toDoubleOrNull() ?: return value
-        return formatTwoDecimals(psi * PSI_TO_BAR)
+        private fun convert(value: String): String {
+            val v = value.toDoubleOrNull() ?: return value
+            return formatTwoDecimals(v * PSI_TO_BAR)
+        }
     }
 }
 ```
 
 Key points:
 
+- No `BooleanParameter("enabled")` is needed — the `StringParameter` value controls the plugin's enabled state via the custom `configure()`.
+- `configure()` returns `null` for `"default"` — the plugin is simply excluded from the pipeline.
 - Modifying `metadata.pressureUnit` changes the column header from `Tank N pressure (psi)` to `Tank N pressure (bar)` — no converter code
   needs to change.
 - `formatTwoDecimals` is the shared formatting utility that produces correct output on all KMP targets (plain `Double.toString()` is not
   safe on Kotlin/Native).
-- The early return when `pressureUnit == BAR` makes the plugin safe to run unconditionally — Garmin logs are always metric/BAR and will pass
-  through untouched.
+- The early return when `pressureUnit == target` makes the plugin safe to run unconditionally — Garmin logs are always metric/BAR and will
+  pass through untouched.
 
 To register this plugin in the desktop app and CLI, see [Adding plugins to the UI and CLI](adding-plugins-to-ui-cli.md).
 

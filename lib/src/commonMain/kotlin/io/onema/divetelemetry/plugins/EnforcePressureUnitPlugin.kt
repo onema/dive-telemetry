@@ -10,17 +10,16 @@ import io.onema.divetelemetry.util.formatTwoDecimals
  * Selecting "default" keeps the source unit and excludes the plugin from the pipeline.
  */
 object EnforcePressureUnitPlugin : DiveLogPlugin {
-    override val id          = "core.enforce-pressure-unit"
-    override val name        = "Pressure Unit"
+    override val id = "core.enforce-pressure-unit"
+    override val name = "Pressure Unit"
     override val description = "Output tank pressure in a specific unit regardless of what the source computer recorded."
-
     override val parameters: List<PluginParameter<*>> = listOf(
         StringParameter(
-            key          = "unit",
-            name         = "Pressure Unit",
-            description  = description,
+            key = "unit",
+            name = "Pressure Unit",
+            description = description,
             defaultValue = "default",
-            options      = listOf("default", "psi", "bar"),
+            options = listOf("default", "psi", "bar"),
         )
     )
 
@@ -28,17 +27,19 @@ object EnforcePressureUnitPlugin : DiveLogPlugin {
     override fun configure(config: Map<String, Any>): DiveLogPlugin? = when (config["unit"] as? String) {
         "psi" -> Configured(PressureUnit.PSI)
         "bar" -> Configured(PressureUnit.BAR)
-        else  -> null
+        else -> null
     }
 
     // Unreachable — configure() always returns a Configured instance or null.
     override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog = diveLog
 
-    private class Configured(private val target: PressureUnit) : DiveLogPlugin {
-        override val id          = EnforcePressureUnitPlugin.id
-        override val name        = EnforcePressureUnitPlugin.name
+    private class Configured(
+        private val target: PressureUnit
+    ) : DiveLogPlugin {
+        override val id = EnforcePressureUnitPlugin.id
+        override val name = EnforcePressureUnitPlugin.name
         override val description = EnforcePressureUnitPlugin.description
-        override val parameters  = EnforcePressureUnitPlugin.parameters
+        override val parameters = EnforcePressureUnitPlugin.parameters
 
         override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
             val source = diveLog.metadata.pressureUnit
@@ -61,7 +62,7 @@ object EnforcePressureUnitPlugin : DiveLogPlugin {
 
             return diveLog.copy(
                 metadata = diveLog.metadata.copy(pressureUnit = target),
-                samples  = convertedSamples,
+                samples = convertedSamples,
             )
         }
 

@@ -15,7 +15,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class EnforcePressureUnitPluginTest {
-
     private fun metadata(pressureUnit: PressureUnit = PressureUnit.PSI) = DiveMetadata(
         depthUnit = DepthUnit.FT,
         tempUnit = TempUnit.FAHRENHEIT,
@@ -126,11 +125,13 @@ class EnforcePressureUnitPluginTest {
 
         // Assert
         assertIs<Either.Right<DiveLog>>(result)
-        val converted = result.value.samples[0].tankPressure1.toDouble()
+        val converted = result.value.samples[0]
+            .tankPressure1
+            .toDouble()
         val expected = 3000.0 * 0.0689476
         assertTrue(
             kotlin.math.abs(converted - expected) < 0.1,
-            "Expected ~${expected}, got $converted"
+            "Expected ~$expected, got $converted"
         )
     }
 
@@ -145,11 +146,13 @@ class EnforcePressureUnitPluginTest {
 
         // Assert
         assertIs<Either.Right<DiveLog>>(result)
-        val converted = result.value.samples[0].tankPressure1.toDouble()
+        val converted = result.value.samples[0]
+            .tankPressure1
+            .toDouble()
         val expected = 200.0 * 14.5038
         assertTrue(
             kotlin.math.abs(converted - expected) < 0.1,
-            "Expected ~${expected}, got $converted"
+            "Expected ~$expected, got $converted"
         )
     }
 
@@ -174,12 +177,14 @@ class EnforcePressureUnitPluginTest {
         val plugin = EnforcePressureUnitPlugin.configure(mapOf("unit" to "bar"))!!
         val log = DiveLog(
             metadata(PressureUnit.PSI),
-            listOf(sample(
-                tankPressure1 = "3000",
-                tankPressure2 = "2500",
-                tankPressure3 = "1000",
-                tankPressure4 = "500",
-            ))
+            listOf(
+                sample(
+                    tankPressure1 = "3000",
+                    tankPressure2 = "2500",
+                    tankPressure3 = "1000",
+                    tankPressure4 = "500",
+                )
+            )
         )
 
         // Act
@@ -200,12 +205,14 @@ class EnforcePressureUnitPluginTest {
         val plugin = EnforcePressureUnitPlugin.configure(mapOf("unit" to "bar"))!!
         val log = DiveLog(
             metadata(PressureUnit.PSI),
-            listOf(sample(
-                tankPressure1 = "AI is off",
-                tankPressure2 = "N/A",
-                tankPressure3 = "No comms for 90s +",
-                tankPressure4 = "",
-            ))
+            listOf(
+                sample(
+                    tankPressure1 = "AI is off",
+                    tankPressure2 = "N/A",
+                    tankPressure3 = "No comms for 90s +",
+                    tankPressure4 = "",
+                )
+            )
         )
 
         // Act
@@ -277,7 +284,19 @@ class EnforcePressureUnitPluginTest {
         // Assert
         assertIs<Either.Right<DiveLog>>(result)
         assertEquals(3, result.value.samples.size)
-        assertTrue(result.value.samples[0].tankPressure1.toDouble() > result.value.samples[1].tankPressure1.toDouble())
-        assertTrue(result.value.samples[1].tankPressure1.toDouble() > result.value.samples[2].tankPressure1.toDouble())
+        assertTrue(
+            result.value.samples[0]
+                .tankPressure1
+                .toDouble() > result.value.samples[1]
+                .tankPressure1
+                .toDouble()
+        )
+        assertTrue(
+            result.value.samples[1]
+                .tankPressure1
+                .toDouble() > result.value.samples[2]
+                .tankPressure1
+                .toDouble()
+        )
     }
 }

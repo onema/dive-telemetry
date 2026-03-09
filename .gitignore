@@ -5,6 +5,10 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+detekt-reports/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

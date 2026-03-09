@@ -14,7 +14,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class SafetyStopPluginTest {
-
     private val metadata = DiveMetadata(
         depthUnit = DepthUnit.FT,
         tempUnit = TempUnit.FAHRENHEIT,
@@ -55,10 +54,10 @@ class SafetyStopPluginTest {
         assertEquals("Safety Stop Timer", SafetyStopPlugin.name)
         assertTrue(SafetyStopPlugin.description.isNotBlank())
         assertEquals(1, SafetyStopPlugin.parameters.size)
-        val param = SafetyStopPlugin.parameters.first()
-        assertIs<BooleanParameter>(param)
-        assertEquals("enabled", param.key)
-        assertEquals(false, param.defaultValue)
+        val enabledParam = SafetyStopPlugin.parameters.first()
+        assertIs<BooleanParameter>(enabledParam)
+        assertEquals("enabled", enabledParam.key)
+        assertEquals(false, enabledParam.defaultValue)
     }
 
     @Test
@@ -74,9 +73,12 @@ class SafetyStopPluginTest {
     @Test
     fun `empty timer during beginning phase`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, depth = 15.0, currentNdl = 10),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, depth = 15.0, currentNdl = 10),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -89,12 +91,15 @@ class SafetyStopPluginTest {
     @Test
     fun `safety stop timer starts in zone after being deep`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            sample(time = 15, depth = 15.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                sample(time = 15, depth = 15.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -107,13 +112,16 @@ class SafetyStopPluginTest {
     @Test
     fun `safety stop timer is 5 minutes after deco`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 60.0, currentNdl = 0, firstStopDepth = 10.0),
-            sample(time = 15, depth = 30.0, currentNdl = 10),
-            sample(time = 20, depth = 15.0, currentNdl = 20),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 60.0, currentNdl = 0, firstStopDepth = 10.0),
+                sample(time = 15, depth = 30.0, currentNdl = 10),
+                sample(time = 20, depth = 15.0, currentNdl = 20),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -126,14 +134,17 @@ class SafetyStopPluginTest {
     @Test
     fun `timer counts down over intervals`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            sample(time = 15, depth = 15.0, currentNdl = 40),
-            sample(time = 20, depth = 15.0, currentNdl = 40),
-            sample(time = 25, depth = 15.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                sample(time = 15, depth = 15.0, currentNdl = 40),
+                sample(time = 20, depth = 15.0, currentNdl = 40),
+                sample(time = 25, depth = 15.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -148,12 +159,15 @@ class SafetyStopPluginTest {
     @Test
     fun `timer empty when not in safety zone`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            sample(time = 15, depth = 30.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                sample(time = 15, depth = 30.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -193,12 +207,15 @@ class SafetyStopPluginTest {
     fun `metric safety zone uses 3-6m`() {
         // Arrange
         val metricMetadata = metadata.copy(depthUnit = DepthUnit.M, tempUnit = TempUnit.CELSIUS)
-        val log = DiveLog(metricMetadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 10.0, currentNdl = 40),
-            sample(time = 15, depth = 5.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metricMetadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 10.0, currentNdl = 40),
+                sample(time = 15, depth = 5.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -237,18 +254,21 @@ class SafetyStopPluginTest {
     @Test
     fun `timer resets when leaving and re-entering safety zone`() {
         // Arrange — enter zone, count down, leave zone, re-enter zone
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            // Enter safety zone
-            sample(time = 15, depth = 15.0, currentNdl = 40),
-            sample(time = 20, depth = 15.0, currentNdl = 40),
-            // Leave safety zone (go deeper)
-            sample(time = 25, depth = 30.0, currentNdl = 40),
-            // Re-enter safety zone — timer should restart
-            sample(time = 30, depth = 15.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                // Enter safety zone
+                sample(time = 15, depth = 15.0, currentNdl = 40),
+                sample(time = 20, depth = 15.0, currentNdl = 40),
+                // Leave safety zone (go deeper)
+                sample(time = 25, depth = 30.0, currentNdl = 40),
+                // Re-enter safety zone — timer should restart
+                sample(time = 30, depth = 15.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -268,12 +288,15 @@ class SafetyStopPluginTest {
     @Test
     fun `exact lower boundary of safety zone 10 ft triggers timer`() {
         // Arrange — depth exactly at 10.0 ft (lower boundary of 10..20 range)
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            sample(time = 15, depth = 10.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                sample(time = 15, depth = 10.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -286,12 +309,15 @@ class SafetyStopPluginTest {
     @Test
     fun `exact upper boundary of safety zone 20 ft triggers timer`() {
         // Arrange — depth exactly at 20.0 ft (upper boundary of 10..20 range)
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            sample(time = 15, depth = 20.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                sample(time = 15, depth = 20.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -304,12 +330,15 @@ class SafetyStopPluginTest {
     @Test
     fun `depth just below safety zone lower boundary does not trigger timer`() {
         // Arrange — depth 9.9 ft, just below 10.0 (outside safety zone)
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            sample(time = 15, depth = 9.9, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                sample(time = 15, depth = 9.9, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -322,12 +351,15 @@ class SafetyStopPluginTest {
     @Test
     fun `timer is zero during active deco`() {
         // Arrange — in deco (NDL=0, firstStopDepth>0) while in safety zone depth
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 30.0, currentNdl = 40),
-            sample(time = 15, depth = 15.0, currentNdl = 0, firstStopDepth = 10.0),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 30.0, currentNdl = 40),
+                sample(time = 15, depth = 15.0, currentNdl = 0, firstStopDepth = 10.0),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -340,12 +372,15 @@ class SafetyStopPluginTest {
     @Test
     fun `timer not triggered when diver has not been deep`() {
         // Arrange — diver stays shallow (depth <= safety zone upper limit = 20ft)
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, depth = 15.0, currentNdl = 40),
-            sample(time = 15, depth = 15.0, currentNdl = 40),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, depth = 15.0, currentNdl = 40),
+                sample(time = 15, depth = 15.0, currentNdl = 40),
+            )
+        )
 
         // Act
         val result = runPlugin(log)

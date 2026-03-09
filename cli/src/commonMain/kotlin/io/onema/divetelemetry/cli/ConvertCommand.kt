@@ -8,10 +8,8 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.choice
-import io.onema.divetelemetry.plugins.DiveLogPlugin
 import io.onema.divetelemetry.plugins.EnforcePressureUnitPlugin
 import io.onema.divetelemetry.plugins.InterpolationPlugin
-import io.onema.divetelemetry.plugins.OutputPlugin
 import io.onema.divetelemetry.plugins.SafetyStopPlugin
 import io.onema.divetelemetry.plugins.TechnicalCCRPlugin
 import io.onema.divetelemetry.plugins.TechnicalOCPlugin
@@ -27,7 +25,7 @@ class ConvertCommand : CliktCommand(
 ) {
 
     init {
-        versionOption(AppVersion.version)
+        versionOption(AppVersion.VERSION)
     }
 
     private val input: String by argument(
@@ -70,16 +68,20 @@ class ConvertCommand : CliktCommand(
     ).choice("default", "psi", "bar")
 
     override fun run() {
-        val configuredPlugins: List<DiveLogPlugin> = buildList {
-            if (interpolate) add(InterpolationPlugin)
-            EnforcePressureUnitPlugin.configure(mapOf("unit" to (pressureUnit ?: "default")))?.let { add(it) }
-        }
+        val pluginConfigs = mapOf(
+            InterpolationPlugin.id to mapOf("enabled" to interpolate),
+            EnforcePressureUnitPlugin.id to mapOf("unit" to (pressureUnit ?: "default")),
+        )
+        val configuredPlugins = listOf(InterpolationPlugin, EnforcePressureUnitPlugin)
+            .mapNotNull { it.configure(pluginConfigs[it.id] ?: emptyMap()) }
 
-        val configuredOutputPlugins: List<OutputPlugin> = buildList {
-            if (technicalOc) add(TechnicalOCPlugin)
-            if (technicalCcr) add(TechnicalCCRPlugin)
-            if (safetyStop) add(SafetyStopPlugin)
-        }
+        val outputPluginConfigs = mapOf(
+            TechnicalOCPlugin.id to mapOf("enabled" to technicalOc),
+            TechnicalCCRPlugin.id to mapOf("enabled" to technicalCcr),
+            SafetyStopPlugin.id to mapOf("enabled" to safetyStop),
+        )
+        val configuredOutputPlugins = listOf(TechnicalOCPlugin, TechnicalCCRPlugin, SafetyStopPlugin)
+            .mapNotNull { it.configure(outputPluginConfigs[it.id] ?: emptyMap()) }
 
         val inputPath = input.toPath()
         val outputPath = output?.toPath() ?: run {

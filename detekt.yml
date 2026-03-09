@@ -29,5 +29,3 @@ output-reports:
     - 'TxtOutputReport'
     - 'XmlOutputReport'
 
-sarif:
-  active: true
