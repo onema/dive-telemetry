@@ -33,7 +33,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api("com.squareup.okio:okio:3.16.4")
-            api("io.arrow-kt:arrow-core:2.2.1")
+            api("io.arrow-kt:arrow-core:2.2.2")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
