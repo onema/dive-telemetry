@@ -1,0 +1,156 @@
+# This workflow automatically builds and publishes releases.
+name: Release
+
+# These are the events that trigger this workflow:
+on:
+  # 1. Pushing a tag that starts with 'v' (e.g. git tag v1.0.0 && git push --tags)
+  push:
+    tags:
+      - 'v*'
+    # 2. Pushing directly to 'main', but ONLY if 'gradle.properties' was modified.
+    branches:
+      - main
+    paths:
+      - 'gradle.properties'
+  # 3. Manually clicking "Run workflow" in the GitHub Actions UI.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 1.0.0). If empty, will use appVersion from gradle.properties'
+        required: false
+        type: string
+  # 4. Creating a Release from the GitHub UI natively.
+  release:
+    types: [published]
+
+# Required permissions for creating releases and uploading to them.
+permissions:
+  contents: write
+
+jobs:
+  # Job 1: Build the native desktop and CLI artifacts on all three major OS's concurrently.
+  build:
+    strategy:
+      # This matrix spins up 3 parallel runners: Mac, Linux, and Windows.
+      matrix:
+        include:
+          - os: macos-latest
+            cli_tasks: ":cli:linkReleaseExecutableMacosX64 :cli:linkReleaseExecutableMacosArm64"
+            app_task: ":app:packageDmg"
+          - os: ubuntu-latest
+            cli_tasks: ":cli:linkReleaseExecutableLinuxX64"
+            app_task: ":app:packageDeb"
+          - os: windows-latest
+            cli_tasks: ":cli:linkReleaseExecutableMingwX64"
+            app_task: ":app:packageMsi"
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install Java 17, which Gradle requires to compile Kotlin Multiplatform code
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Safely verify that whatever version triggered us strictly matches 'gradle.properties'
+      - name: Verify Version Match
+        shell: bash
+        run: |
+          # Extract version from gradle.properties
+          APP_VERSION=$(grep 'appVersion=' gradle.properties | cut -d'=' -f2)
+          echo "App Version: $APP_VERSION"
+
+          # Determine the target version for this release depending on exactly HOW it was triggered
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref_type }}" == "tag" ]; then
+            TAG_VERSION=${GITHUB_REF_NAME#v}
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            TAG_VERSION=${{ github.event.release.tag_name }}
+            TAG_VERSION=${TAG_VERSION#v}
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            TAG_VERSION=${{ github.event.inputs.version }}
+            # If the user leaves the manual input blank, fallback to gradle.properties
+            if [ -z "$TAG_VERSION" ]; then
+              TAG_VERSION=$APP_VERSION
+            fi
+          else
+            # Default for pushes to main branch
+            TAG_VERSION=$APP_VERSION
+          fi
+          
+          echo "Release Target Version: $TAG_VERSION"
+          
+          # Fail the build instantly before wasting time compiling if they don't exactly match
+          if [ "$TAG_VERSION" != "$APP_VERSION" ]; then
+            echo "Error: Target version ($TAG_VERSION) does not match appVersion in gradle.properties ($APP_VERSION)"
+            exit 1
+          fi
+
+      # Required for Linux Compose Desktop Builds (packaging DEBs requires fakeroot/dpkg)
+      - name: Install native dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot dpkg rpm valgrind
+
+      # Execute the dynamic Gradle tasks specified in our matrix
+      - name: Build CLI
+        run: ./gradlew ${{ matrix.cli_tasks }}
+
+      - name: Build App
+        run: ./gradlew ${{ matrix.app_task }}
+
+      # Gather the deep-nested binaries into a flat 'dist/' directory, renaming the CLI binaries properly
+      - name: Prepare Artifacts
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            cp app/build/compose/binaries/main/dmg/*.dmg dist/
+            cp cli/build/bin/macosX64/releaseExecutable/*.kexe dist/dive-telemetry-cli-macos-x64.kexe
+            cp cli/build/bin/macosArm64/releaseExecutable/*.kexe dist/dive-telemetry-cli-macos-arm64.kexe
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            cp app/build/compose/binaries/main/deb/*.deb dist/
+            cp cli/build/bin/linuxX64/releaseExecutable/*.kexe dist/dive-telemetry-cli-linux-x64.kexe
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp app/build/compose/binaries/main/msi/*.msi dist/
+            cp cli/build/bin/mingwX64/releaseExecutable/*.exe dist/dive-telemetry-cli-windows-x64.exe
+          fi
+
+      # Upload the artifacts for this specific OS to GitHub Actions staging
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ matrix.os }}
+          path: dist/*
+          retention-days: 1
+
+  # Job 2: After ALL three OS's successfully build, merge their artifacts and create the final GitHub Release
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Download ALL artifacts from the matrix build job into one flat folder
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      # Extract the APP_VERSION dynamically to use in the release title/tag if it wasn't triggered by a tag
+      - name: Extract App Version
+        id: version
+        shell: bash
+        run: |
+          APP_VERSION=$(grep 'appVersion=' gradle.properties | cut -d'=' -f2)
+          echo "APP_VERSION=$APP_VERSION" >> "$GITHUB_OUTPUT"
+
+      # Finally, upload everything!
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'release' && github.event.release.tag_name || (github.event_name == 'push' && github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.APP_VERSION)) }}
+          name: Release ${{ github.event_name == 'release' && github.event.release.tag_name || (github.event_name == 'push' && github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.APP_VERSION)) }}
+          files: release-artifacts/*
+          fail_on_unmatched_files: true

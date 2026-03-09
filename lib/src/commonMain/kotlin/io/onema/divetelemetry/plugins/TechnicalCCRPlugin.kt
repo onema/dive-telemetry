@@ -17,10 +17,10 @@ object TechnicalCCRPlugin : OutputPlugin {
     override val parameters: List<PluginParameter<*>> = listOf(
         BooleanParameter(
             key = "enabled",
-            name = "Enable Technical CCR",
-            description = "Add per-sensor PPO2 and diluent PPO2 columns.",
+            name = name,
+            description = description,
             defaultValue = false,
-        )
+        ),
     )
 
     override fun additionalHeaders(metadata: DiveMetadata): List<String> = listOf(
@@ -118,7 +118,3 @@ object TechnicalCCRPlugin : OutputPlugin {
         val sensor3: Double?,
     )
 }
-
-
-
-

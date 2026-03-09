@@ -1,8 +1,8 @@
 package io.onema.divetelemetry.integration
 
 import arrow.core.getOrElse
-import io.onema.divetelemetry.service.ShearwaterFormat
 import io.onema.divetelemetry.plugins.InterpolationPlugin
+import io.onema.divetelemetry.service.ShearwaterFormat
 import io.onema.divetelemetry.service.transformDiveLog
 import okio.Buffer
 import okio.FileSystem
@@ -14,7 +14,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class EndToEndTransformTest {
-
     @Test
     fun fullPipelineMatchesExpectedOutput() {
         // Arrange
@@ -35,9 +34,12 @@ class EndToEndTransformTest {
 
         // Assert
         val actualBytes = outputBuffer.readByteArray()
-        assertTrue(
-            expectedBytes.contentEquals(actualBytes),
-            "Output bytes do not match expected: expected ${expectedBytes.size} bytes, got ${actualBytes.size} bytes"
+        val expectedString = expectedBytes.decodeToString().replace("\r\n", "\n")
+        val actualString = actualBytes.decodeToString().replace("\r\n", "\n")
+        assertEquals(
+            expectedString,
+            actualString,
+            "Output strings do not match expected (ignoring line endings)"
         )
     }
 

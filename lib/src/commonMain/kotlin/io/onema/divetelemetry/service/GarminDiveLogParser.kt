@@ -6,15 +6,14 @@ import io.onema.divetelemetry.domain.DepthUnit
 import io.onema.divetelemetry.domain.DiveLog
 import io.onema.divetelemetry.domain.DiveMetadata
 import io.onema.divetelemetry.domain.DiveSample
+import io.onema.divetelemetry.domain.FitMessage
 import io.onema.divetelemetry.domain.PressureUnit
 import io.onema.divetelemetry.domain.TempUnit
-import io.onema.divetelemetry.domain.FitMessage
 import io.onema.divetelemetry.error.ParseError
 import io.onema.divetelemetry.util.decodeFitFile
 import okio.BufferedSource
 
 class GarminDiveLogParser : DiveLogParser {
-
     companion object {
         private const val MSG_RECORD = 20
         private const val MSG_DIVE_GAS = 259
@@ -109,7 +108,5 @@ class GarminDiveLogParser : DiveLogParser {
         )
     }
 
-    private fun extractTimestamp(msg: FitMessage): Long? {
-        return msg.fields[FIELD_TIMESTAMP] as? Long
-    }
+    private fun extractTimestamp(msg: FitMessage): Long? = msg.fields[FIELD_TIMESTAMP] as? Long
 }

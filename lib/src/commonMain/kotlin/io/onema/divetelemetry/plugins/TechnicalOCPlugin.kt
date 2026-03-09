@@ -9,7 +9,6 @@ import io.onema.divetelemetry.domain.DiveSample
 import io.onema.divetelemetry.util.formatMinSec
 import io.onema.divetelemetry.util.formatTwoDecimals
 import io.onema.divetelemetry.util.gasMixture
-import kotlin.math.abs
 
 object TechnicalOCPlugin : OutputPlugin {
     override val id: String = "core.technical-oc"
@@ -19,10 +18,10 @@ object TechnicalOCPlugin : OutputPlugin {
     override val parameters: List<PluginParameter<*>> = listOf(
         BooleanParameter(
             key = "enabled",
-            name = "Enable Technical OC",
-            description = "Add NDL, decompression, and deco clear columns.",
-            defaultValue = false,
-        )
+            name = name,
+            description = description,
+            defaultValue = true,
+        ),
     )
 
     override fun additionalHeaders(metadata: DiveMetadata): List<String> {
@@ -87,6 +86,7 @@ object TechnicalOCPlugin : OutputPlugin {
             )
         }
     }
+
     private data class OCState(
         val beginningPhase: Boolean,
         val inDeco: Boolean,
@@ -108,52 +108,53 @@ object TechnicalOCPlugin : OutputPlugin {
             ndlBeforeDecoTime = null,
         )
 
-        return samples.runningFold(initial) { state, sample ->
-            val newBeginningPhase = when {
-                !state.beginningPhase -> false
-                sample.currentNdl != null && sample.currentNdl >= 50 -> false
-                else -> true
-            }
+        return samples
+            .runningFold(initial) { state, sample ->
+                val newBeginningPhase = when {
+                    !state.beginningPhase -> false
+                    sample.currentNdl != null && sample.currentNdl >= 50 -> false
+                    else -> true
+                }
 
-            val currentInDeco = sample.currentNdl == 0L || sample.firstStopDepth > 0.0
+                val currentInDeco = sample.currentNdl == 0L || sample.firstStopDepth > 0.0
 
-            val newWasInDeco = state.wasInDeco || (!newBeginningPhase && currentInDeco)
+                val newWasInDeco = state.wasInDeco || (!newBeginningPhase && currentInDeco)
 
-            val newDecoClearedAtTime = when {
-                currentInDeco -> null
-                newBeginningPhase -> null
-                !state.beginningPhase && state.inDeco && !currentInDeco -> sample.timeSeconds
-                else -> state.decoClearedAtTime
-            }
+                val newDecoClearedAtTime = when {
+                    currentInDeco -> null
+                    newBeginningPhase -> null
+                    !state.beginningPhase && state.inDeco && !currentInDeco -> sample.timeSeconds
+                    else -> state.decoClearedAtTime
+                }
 
-            val newLastNdlValue = when {
-                newBeginningPhase -> null
-                !currentInDeco -> sample.currentNdl ?: state.lastNdlValue
-                else -> state.lastNdlValue
-            }
+                val newLastNdlValue = when {
+                    newBeginningPhase -> null
+                    !currentInDeco -> sample.currentNdl ?: state.lastNdlValue
+                    else -> state.lastNdlValue
+                }
 
-            val enteringDeco = !state.beginningPhase && !state.inDeco && currentInDeco
-            val newNdlBeforeDeco = when {
-                state.ndlBeforeDeco != null -> state.ndlBeforeDeco
-                enteringDeco -> state.lastNdlValue
-                else -> null
-            }
-            val newNdlBeforeDecoTime = when {
-                state.ndlBeforeDecoTime != null -> state.ndlBeforeDecoTime
-                enteringDeco -> sample.timeSeconds
-                else -> null
-            }
+                val enteringDeco = !state.beginningPhase && !state.inDeco && currentInDeco
+                val newNdlBeforeDeco = when {
+                    state.ndlBeforeDeco != null -> state.ndlBeforeDeco
+                    enteringDeco -> state.lastNdlValue
+                    else -> null
+                }
+                val newNdlBeforeDecoTime = when {
+                    state.ndlBeforeDecoTime != null -> state.ndlBeforeDecoTime
+                    enteringDeco -> sample.timeSeconds
+                    else -> null
+                }
 
-            OCState(
-                beginningPhase = newBeginningPhase,
-                inDeco = currentInDeco,
-                wasInDeco = newWasInDeco,
-                decoClearedAtTime = newDecoClearedAtTime,
-                lastNdlValue = newLastNdlValue,
-                ndlBeforeDeco = newNdlBeforeDeco,
-                ndlBeforeDecoTime = newNdlBeforeDecoTime,
-            )
-        }.drop(1)
+                OCState(
+                    beginningPhase = newBeginningPhase,
+                    inDeco = currentInDeco,
+                    wasInDeco = newWasInDeco,
+                    decoClearedAtTime = newDecoClearedAtTime,
+                    lastNdlValue = newLastNdlValue,
+                    ndlBeforeDeco = newNdlBeforeDeco,
+                    ndlBeforeDecoTime = newNdlBeforeDecoTime,
+                )
+            }.drop(1)
     }
 
     private data class NdlColumns(
@@ -251,4 +252,3 @@ object TechnicalOCPlugin : OutputPlugin {
         )
     }
 }
-
