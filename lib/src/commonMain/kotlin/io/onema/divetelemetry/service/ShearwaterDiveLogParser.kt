@@ -14,7 +14,6 @@ import io.onema.divetelemetry.util.splitCsvLine
 import okio.BufferedSource
 
 class ShearwaterDiveLogParser : DiveLogParser {
-
     private val requiredColumns = setOf(
         "Time (sec)", "Depth", "Average PPO2",
         "Fraction O2", "Fraction He", "Water Temp",
@@ -60,8 +59,7 @@ class ShearwaterDiveLogParser : DiveLogParser {
             .map { line ->
                 val fields = splitCsvLine(line)
                 parseSample(fields, headerIndexMap)
-            }
-            .toList()
+            }.toList()
 
         return DiveLog(
             metadata = metadata,

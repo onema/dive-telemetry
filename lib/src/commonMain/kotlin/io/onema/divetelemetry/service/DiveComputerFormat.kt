@@ -26,6 +26,7 @@ object ShearwaterFormat : DiveComputerFormat {
     override val id = "shearwater"
     override val name = "Shearwater CSV"
     override val extensions = listOf(".csv")
+
     override fun createParser() = ShearwaterDiveLogParser()
 }
 
@@ -33,6 +34,7 @@ object GarminFormat : DiveComputerFormat {
     override val id = "garmin"
     override val name = "Garmin FIT"
     override val extensions = listOf(".fit")
+
     override fun createParser() = GarminDiveLogParser()
 }
 
@@ -40,6 +42,7 @@ object Dl7Format : DiveComputerFormat {
     override val id: String = "DL7"
     override val name: String = "DAN-DL7 ZXU"
     override val extensions: List<String> = listOf(".zxu")
+
     override fun createParser(): DiveLogParser = Dl7DiveLogParser()
 }
 

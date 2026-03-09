@@ -23,9 +23,9 @@ val generateVersionFile by tasks.register("generateVersionFile") {
             package io.onema.divetelemetry.cli
 
             internal object AppVersion {
-                const val version = "$appVersion"
+                const val VERSION = "$appVersion"
             }
-            """.trimIndent()
+            """.trimIndent() + "\n"
         )
     }
 }
