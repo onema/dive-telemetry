@@ -1,5 +1,7 @@
 # Dive Telemetry
 
+**[Download Artifacts (Releases)](https://github.com/onema/dive-telemetry/releases)**
+
 A Kotlin Multiplatform library, desktop app, and CLI tool that converts
 [Shearwater](https://www.shearwater.com/) and [Garmin](https://www.garmin.com/) dive computer
 exports into the CSV format used by [Telemetry ](https://telemetry.com/) for video overlays.
