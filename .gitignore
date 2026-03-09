@@ -8,6 +8,7 @@ build/
 node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+detekt-reports/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
