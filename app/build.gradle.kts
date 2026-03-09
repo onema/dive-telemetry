@@ -69,9 +69,9 @@ compose.desktop.application {
     mainClass = "io.onema.divetelemetry.app.MainKt"
     nativeDistributions {
         targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-        packageName = "Dive Telemetry "
-        packageVersion = appVersion
-        description = "Convert dive computer exports into Telemetry  format"
+        packageName = "Dive Telemetry"
+        packageVersion = appVersion.substringBefore("-")
+        description = "Convert dive computer exports into Telemetry format"
         vendor = "onema.io"
         macOS {
             bundleID = "io.onema.divetelemetry"
