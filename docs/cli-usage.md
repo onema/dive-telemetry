@@ -2,6 +2,14 @@
 
 The `cli` module produces a self-contained native binary — no JVM required at runtime.
 
+## Installation / macOS Note
+
+If you downloaded the pre-compiled binary for macOS, Gatekeeper may prevent it from running. You can clear the quarantine attribute by running:
+
+```bash
+xattr -d com.apple.quarantine <path-to-binary>
+```
+
 ## Basic usage
 
 ```bash

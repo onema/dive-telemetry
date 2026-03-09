@@ -1,5 +1,7 @@
 # Dive Telemetry
 
+**[Documentation](https://onema.github.io/dive-telemetry/)** | **[Download Artifacts (Releases)](https://github.com/onema/dive-telemetry/releases)**
+
 > NOTE: This project was inspired and to an extent ported over from the work done by [Eric Stott](https://www.youtube.com/@EricStott)
 
 A Kotlin Multiplatform project that converts [Shearwater](https://www.shearwater.com/)
@@ -176,6 +178,12 @@ The docs include:
 ## CLI tool
 
 See **[docs/cli-usage.md](docs/cli-usage.md)** for usage, options, and build commands.
+
+> **Note for macOS users**: If you downloaded the pre-compiled binary, macOS runs it through Gatekeeper. To allow execution, remove the quarantine attribute:
+> ```bash
+> xattr -d com.apple.quarantine <path-to-binary>
+> ```
+
 
 ```bash
 # Quick start
