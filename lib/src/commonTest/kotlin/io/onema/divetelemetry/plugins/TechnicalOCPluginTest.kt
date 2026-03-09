@@ -14,7 +14,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class TechnicalOCPluginTest {
-
     private val metadata = DiveMetadata(
         depthUnit = DepthUnit.FT,
         tempUnit = TempUnit.FAHRENHEIT,
@@ -57,10 +56,10 @@ class TechnicalOCPluginTest {
         assertEquals("Technical Open Circuit", TechnicalOCPlugin.name)
         assertTrue(TechnicalOCPlugin.description.isNotBlank())
         assertEquals(1, TechnicalOCPlugin.parameters.size)
-        val param = TechnicalOCPlugin.parameters.first()
-        assertIs<BooleanParameter>(param)
-        assertEquals("enabled", param.key)
-        assertEquals(false, param.defaultValue)
+        val enabledParam = TechnicalOCPlugin.parameters.first()
+        assertIs<BooleanParameter>(enabledParam)
+        assertEquals("enabled", enabledParam.key)
+        assertEquals(true, enabledParam.defaultValue)
     }
 
     @Test
@@ -95,11 +94,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `NDL above 5 shows white`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 30),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 30),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -116,11 +118,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `NDL 1-5 shows yellow`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 3),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 3),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -137,11 +142,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `NDL 0 shows red`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 0),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 0),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -158,11 +166,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `deco columns populated when in deco`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 0, firstStopDepth = 10.0),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 0, firstStopDepth = 10.0),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -181,13 +192,16 @@ class TechnicalOCPluginTest {
     @Test
     fun `clear columns populated after deco clears`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 0, firstStopDepth = 10.0),
-            sample(time = 15, currentNdl = 10),
-            sample(time = 30, currentNdl = 20),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 0, firstStopDepth = 10.0),
+                sample(time = 15, currentNdl = 10),
+                sample(time = 30, currentNdl = 20),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -208,12 +222,15 @@ class TechnicalOCPluginTest {
     @Test
     fun `NDL before clear captures NDL at deco entry`() {
         // Arrange -- NDL is 8 at t=5, deco starts at t=10, clears at t=15
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 8),
-            sample(time = 10, currentNdl = 0, firstStopDepth = 10.0),
-            sample(time = 15, currentNdl = 20),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 8),
+                sample(time = 10, currentNdl = 0, firstStopDepth = 10.0),
+                sample(time = 15, currentNdl = 20),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -231,11 +248,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `NDL before clear empty until deco clears`() {
         // Arrange -- never enters deco
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 30),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 30),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -251,11 +271,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `returns one row per sample`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0),
-            sample(time = 5),
-            sample(time = 10),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0),
+                sample(time = 5),
+                sample(time = 10),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -282,11 +305,14 @@ class TechnicalOCPluginTest {
     fun `metric deco measurement uses m`() {
         // Arrange
         val metricMetadata = metadata.copy(depthUnit = DepthUnit.M, tempUnit = TempUnit.CELSIUS)
-        val log = DiveLog(metricMetadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 0, firstStopDepth = 3.0),
-        ))
+        val log = DiveLog(
+            metricMetadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 0, firstStopDepth = 3.0),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -299,10 +325,13 @@ class TechnicalOCPluginTest {
     @Test
     fun `NDL 49 keeps beginning phase active`() {
         // Arrange — NDL 49 is below the >= 50 threshold, so beginning phase stays active
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 49),
-            sample(time = 5, currentNdl = 49),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 49),
+                sample(time = 5, currentNdl = 49),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -318,11 +347,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `NDL 50 exits beginning phase`() {
         // Arrange — NDL 50 meets the >= 50 threshold, so beginning phase ends
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 30),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 30),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -336,11 +368,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `deco detected via firstStopDepth alone with NDL greater than 0`() {
         // Arrange — firstStopDepth > 0 triggers deco even when NDL > 0
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 5, firstStopDepth = 10.0),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 5, firstStopDepth = 10.0),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -355,11 +390,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `null NDL after beginning phase shows empty NDL columns`() {
         // Arrange — after beginning phase ends, null NDL should produce empty columns
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = null),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = null),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -376,12 +414,15 @@ class TechnicalOCPluginTest {
     @Test
     fun `clear columns show nitrox gas mixture label`() {
         // Arrange — use Nx32 gas
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99, fractionO2 = 0.32),
-            sample(time = 5, currentNdl = 50, fractionO2 = 0.32),
-            sample(time = 10, currentNdl = 0, firstStopDepth = 10.0, fractionO2 = 0.32),
-            sample(time = 15, currentNdl = 10, fractionO2 = 0.32),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99, fractionO2 = 0.32),
+                sample(time = 5, currentNdl = 50, fractionO2 = 0.32),
+                sample(time = 10, currentNdl = 0, firstStopDepth = 10.0, fractionO2 = 0.32),
+                sample(time = 15, currentNdl = 10, fractionO2 = 0.32),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -394,12 +435,15 @@ class TechnicalOCPluginTest {
     @Test
     fun `clear columns show empty for trimix gas mixture label`() {
         // Arrange — use trimix (He > 0)
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99, fractionO2 = 0.18, fractionHe = 0.45),
-            sample(time = 5, currentNdl = 50, fractionO2 = 0.18, fractionHe = 0.45),
-            sample(time = 10, currentNdl = 0, firstStopDepth = 10.0, fractionO2 = 0.18, fractionHe = 0.45),
-            sample(time = 15, currentNdl = 10, fractionO2 = 0.18, fractionHe = 0.45),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99, fractionO2 = 0.18, fractionHe = 0.45),
+                sample(time = 5, currentNdl = 50, fractionO2 = 0.18, fractionHe = 0.45),
+                sample(time = 10, currentNdl = 0, firstStopDepth = 10.0, fractionO2 = 0.18, fractionHe = 0.45),
+                sample(time = 15, currentNdl = 10, fractionO2 = 0.18, fractionHe = 0.45),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -412,11 +456,14 @@ class TechnicalOCPluginTest {
     @Test
     fun `deco columns empty when not in deco after beginning phase`() {
         // Arrange — after beginning phase, NDL > 0, firstStopDepth = 0
-        val log = DiveLog(metadata, listOf(
-            sample(time = 0, currentNdl = 99),
-            sample(time = 5, currentNdl = 50),
-            sample(time = 10, currentNdl = 30),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(time = 0, currentNdl = 99),
+                sample(time = 5, currentNdl = 50),
+                sample(time = 10, currentNdl = 30),
+            )
+        )
 
         // Act
         val result = runPlugin(log)

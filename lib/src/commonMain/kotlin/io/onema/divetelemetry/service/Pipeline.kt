@@ -31,7 +31,6 @@ fun transformDiveLog(
     plugins: List<DiveLogPlugin> = emptyList(),
     outputPlugins: List<OutputPlugin> = emptyList(),
 ): Either<PipelineError, Unit> = either {
-
     val parser = format.createParser()
     val converter = TelemetryConverter.create()
     val writer = CsvWriter()
@@ -65,9 +64,7 @@ private fun <Acc, P : Plugin> Raise<PipelineError>.runPluginChain(
     execute: Raise<PluginError>.(acc: Acc, plugin: P) -> Acc,
 ): Acc = plugins.fold(initial) { acc, plugin -> execute(acc, plugin) }
 
-private fun Raise<PluginError>.diveLogPlugins(acc: DiveLog, plugin: DiveLogPlugin): DiveLog {
-    return plugin.run { transform(acc) }
-}
+private fun Raise<PluginError>.diveLogPlugins(acc: DiveLog, plugin: DiveLogPlugin): DiveLog = plugin.run { transform(acc) }
 
 private fun Raise<PluginError>.outputPlugins(
     acc: TelemetryOutput,

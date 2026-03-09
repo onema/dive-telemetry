@@ -5,7 +5,7 @@
  * with this source code.
  *
  * copyright (c) 2026, Juan Manuel Torres (http://onema.io)
- * 
+ *
  * @author Juan Manuel Torres <software@onema.io>
  */
 
@@ -25,7 +25,7 @@ import okio.BufferedSource
 /**
  * EXPERIMENTAL
  */
-class Dl7DiveLogParser :  DiveLogParser {
+class Dl7DiveLogParser : DiveLogParser {
     override fun Raise<ParseError>.parse(source: BufferedSource): DiveLog {
         val lines = generateSequence { source.readUtf8Line() }.toList()
 
@@ -50,7 +50,7 @@ class Dl7DiveLogParser :  DiveLogParser {
 
         return DiveLog(
             metadata = DiveMetadata(
-                depthUnit = DepthUnit.M,   // DL7 always stores depth in meters
+                depthUnit = DepthUnit.M, // DL7 always stores depth in meters
                 tempUnit = tempUnit,
                 pressureUnit = pressureUnit,
                 startTime = startTime,
@@ -100,7 +100,9 @@ class Dl7DiveLogParser :  DiveLogParser {
         val sec = raw.substring(12, 14)
         val amPm = if (hour >= 12) "PM" else "AM"
         val hour12 = when {
-            hour == 0 -> 12; hour > 12 -> hour - 12; else -> hour
+            hour == 0 -> 12
+            hour > 12 -> hour - 12
+            else -> hour
         }
         return "$month/$day/$year $hour12:$min:$sec $amPm"
     }

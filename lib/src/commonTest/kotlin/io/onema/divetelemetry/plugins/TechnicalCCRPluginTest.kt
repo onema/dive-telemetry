@@ -14,7 +14,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class TechnicalCCRPluginTest {
-
     private val metadata = DiveMetadata(
         depthUnit = DepthUnit.FT,
         tempUnit = TempUnit.FAHRENHEIT,
@@ -61,10 +60,10 @@ class TechnicalCCRPluginTest {
         assertEquals("Technical Closed Circuit Rebreather", TechnicalCCRPlugin.name)
         assertTrue(TechnicalCCRPlugin.description.isNotBlank())
         assertEquals(1, TechnicalCCRPlugin.parameters.size)
-        val param = TechnicalCCRPlugin.parameters.first()
-        assertIs<BooleanParameter>(param)
-        assertEquals("enabled", param.key)
-        assertEquals(false, param.defaultValue)
+        val enabledParam = TechnicalCCRPlugin.parameters.first()
+        assertIs<BooleanParameter>(enabledParam)
+        assertEquals("enabled", enabledParam.key)
+        assertEquals(false, enabledParam.defaultValue)
     }
 
     @Test
@@ -100,10 +99,13 @@ class TechnicalCCRPluginTest {
     @Test
     fun `ppo2 columns populated with calibrated sensors`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
-            sample(depth = 33.0, avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
+                sample(depth = 33.0, avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -118,10 +120,13 @@ class TechnicalCCRPluginTest {
     @Test
     fun `excessive ppo2 detected for out-of-range values`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 2.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
-            sample(depth = 33.0, avgPpo2 = 2.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 2.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
+                sample(depth = 33.0, avgPpo2 = 2.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -136,9 +141,12 @@ class TechnicalCCRPluginTest {
     @Test
     fun `diluent ppo2 computed correctly for imperial`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(depth = 33.0, fractionO2 = 0.21),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(depth = 33.0, fractionO2 = 0.21),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -154,9 +162,12 @@ class TechnicalCCRPluginTest {
     fun `diluent ppo2 computed correctly for metric`() {
         // Arrange
         val metricMetadata = metadata.copy(depthUnit = DepthUnit.M, tempUnit = TempUnit.CELSIUS)
-        val log = DiveLog(metricMetadata, listOf(
-            sample(depth = 10.0, fractionO2 = 0.21),
-        ))
+        val log = DiveLog(
+            metricMetadata,
+            listOf(
+                sample(depth = 10.0, fractionO2 = 0.21),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -170,9 +181,12 @@ class TechnicalCCRPluginTest {
     @Test
     fun `abnormal diluent ppo2 detected`() {
         // Arrange
-        val log = DiveLog(metadata, listOf(
-            sample(depth = 0.0, fractionO2 = 0.10),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(depth = 0.0, fractionO2 = 0.10),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -214,10 +228,13 @@ class TechnicalCCRPluginTest {
     fun `sensor ppo2 exactly at 0 point 4 is normal`() {
         // Arrange — calibration: avgPpo2=0.4, sensor1Mv="100" => factor=0.004
         //           second sample: sensor1Mv="100" => ppo2=0.004*100=0.4 => in range [0.4..1.6]
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 0.4, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-            sample(depth = 33.0, avgPpo2 = 0.4, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 0.4, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+                sample(depth = 33.0, avgPpo2 = 0.4, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -233,10 +250,13 @@ class TechnicalCCRPluginTest {
     fun `sensor ppo2 exactly at 1 point 6 is normal`() {
         // Arrange — calibration: avgPpo2=1.6, sensor1Mv="100" => factor=0.016
         //           second sample: sensor1Mv="100" => ppo2=0.016*100=1.6 => in range
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 1.6, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-            sample(depth = 33.0, avgPpo2 = 1.6, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 1.6, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+                sample(depth = 33.0, avgPpo2 = 1.6, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -252,10 +272,13 @@ class TechnicalCCRPluginTest {
     fun `sensor ppo2 just below 0 point 4 is excessive`() {
         // Arrange — calibration: avgPpo2=0.39, sensor1Mv="100" => factor=0.0039
         //           second sample: sensor1Mv="100" => ppo2=0.39 => below 0.4 => excessive
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 0.39, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-            sample(depth = 33.0, avgPpo2 = 0.39, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 0.39, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+                sample(depth = 33.0, avgPpo2 = 0.39, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -271,10 +294,13 @@ class TechnicalCCRPluginTest {
     fun `sensor ppo2 just above 1 point 6 is excessive`() {
         // Arrange — calibration: avgPpo2=1.61, sensor1Mv="100" => factor=0.0161
         //           second sample: sensor1Mv="100" => ppo2=1.61 => above 1.6 => excessive
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 1.61, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-            sample(depth = 33.0, avgPpo2 = 1.61, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 1.61, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+                sample(depth = 33.0, avgPpo2 = 1.61, sensor1Mv = "100", sensor2Mv = "0", sensor3Mv = "0"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -291,9 +317,12 @@ class TechnicalCCRPluginTest {
         // Arrange — dilPO2 = (depth/seawaterFactor + 1) * fractionO2
         //           For imperial: (depth/33 + 1) * fractionO2 = 0.19
         //           depth = 0, fractionO2 = 0.19 => dilPO2 = 1.0 * 0.19 = 0.19
-        val log = DiveLog(metadata, listOf(
-            sample(depth = 0.0, fractionO2 = 0.19),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(depth = 0.0, fractionO2 = 0.19),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -308,9 +337,12 @@ class TechnicalCCRPluginTest {
     @Test
     fun `diluent ppo2 just below 0 point 19 is abnormal`() {
         // Arrange — fractionO2 = 0.18 at depth 0 => dilPO2 = 0.18 < 0.19
-        val log = DiveLog(metadata, listOf(
-            sample(depth = 0.0, fractionO2 = 0.18),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(depth = 0.0, fractionO2 = 0.18),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -327,10 +359,13 @@ class TechnicalCCRPluginTest {
         // Arrange — avgPpo2=0.0, sensor has mV => factor = 0/50 = 0, but code checks mv==0 not factor==0
         //           Actually: calibrationFactor(0.0, "50") = 0.0/50.0 = 0.0 (not null)
         //           computeSensorPpo2("50", 0.0) = 0.0 * 50 = 0.0, which == 0.0 => returns null
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 0.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
-            sample(depth = 33.0, avgPpo2 = 0.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 0.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
+                sample(depth = 33.0, avgPpo2 = 0.0, sensor1Mv = "50", sensor2Mv = "50", sensor3Mv = "50"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)
@@ -349,10 +384,13 @@ class TechnicalCCRPluginTest {
     @Test
     fun `mixed sensors with some zero and some active`() {
         // Arrange — sensor 1 active, sensors 2 and 3 have zero mV
-        val log = DiveLog(metadata, listOf(
-            sample(avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
-            sample(depth = 33.0, avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
-        ))
+        val log = DiveLog(
+            metadata,
+            listOf(
+                sample(avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
+                sample(depth = 33.0, avgPpo2 = 1.0, sensor1Mv = "50", sensor2Mv = "0", sensor3Mv = "0"),
+            )
+        )
 
         // Act
         val result = runPlugin(log)

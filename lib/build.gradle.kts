@@ -11,6 +11,13 @@ repositories {
     mavenCentral()
 }
 
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    config.from(rootProject.file("detekt.yml"))
+    reports {
+        sarif.required.set(true)
+    }
+}
+
 kotlin {
     // JVM target (for IntelliJ debugging + Compose Desktop app)
     jvm()

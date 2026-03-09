@@ -7,6 +7,10 @@ import io.onema.divetelemetry.domain.TelemetryOutput
 import io.onema.divetelemetry.domain.TelemetryRow
 import io.onema.divetelemetry.error.WriteError
 import okio.Buffer
+import okio.IOException
+import okio.Sink
+import okio.Timeout
+import okio.buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -14,7 +18,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class CsvWriterTest {
-
     private fun writeOrFail(output: TelemetryOutput, buffer: Buffer) {
         either {
             with(CsvWriter()) { write(output, buffer) }
@@ -127,12 +130,19 @@ class CsvWriterTest {
             headers = listOf("A"),
             rows = listOf(TelemetryRow(mapOf("A" to "1")))
         )
-        val buffer = Buffer()
-        buffer.close()
+        val brokenSink = object : Sink {
+            override fun write(source: Buffer, byteCount: Long) = throw IOException("closed")
+
+            override fun flush() = throw IOException("closed")
+
+            override fun timeout(): Timeout = Timeout.NONE
+
+            override fun close() {}
+        }.buffer()
 
         // Act
         val result = either<WriteError, Unit> {
-            with(CsvWriter()) { write(output, buffer) }
+            with(CsvWriter()) { write(output, brokenSink) }
         }
 
         // Assert

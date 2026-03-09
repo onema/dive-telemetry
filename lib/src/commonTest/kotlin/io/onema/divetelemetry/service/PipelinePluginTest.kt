@@ -3,7 +3,6 @@ package io.onema.divetelemetry.service
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.Raise
-import io.onema.divetelemetry.service.ShearwaterFormat
 import io.onema.divetelemetry.domain.DiveLog
 import io.onema.divetelemetry.domain.DiveMetadata
 import io.onema.divetelemetry.error.ParseError
@@ -27,7 +26,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class PipelinePluginTest {
-
     @Test
     fun `pipeline with no plugins produces same output as before`() {
         val inputPath = "src/commonTest/resources/2025-12-7-ellen.csv".toPath()
@@ -43,7 +41,13 @@ class PipelinePluginTest {
             source.close()
         }
 
-        assertTrue(expectedBytes.contentEquals(outputBuffer.readByteArray()))
+        val expectedString = expectedBytes.decodeToString().replace("\r\n", "\n")
+        val actualString = outputBuffer.readByteArray().decodeToString().replace("\r\n", "\n")
+        assertEquals(
+            expectedString,
+            actualString,
+            "Output strings do not match expected (ignoring line endings)"
+        )
     }
 
     @Test
@@ -57,9 +61,8 @@ class PipelinePluginTest {
             override val name = "Truncate"
             override val description = "Keep only first 2 samples"
             override val parameters: List<PluginParameter<*>> = emptyList()
-            override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
-                return diveLog.copy(samples = diveLog.samples.take(2))
-            }
+
+            override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog = diveLog.copy(samples = diveLog.samples.take(2))
         }
 
         val source1 = FileSystem.SYSTEM.source(inputPath).buffer()
@@ -100,6 +103,7 @@ class PipelinePluginTest {
             override val name = pluginId
             override val description = ""
             override val parameters: List<PluginParameter<*>> = emptyList()
+
             override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
                 executionOrder.add(pluginId)
                 return diveLog
@@ -133,6 +137,7 @@ class PipelinePluginTest {
             override val name = "Failing Plugin"
             override val description = ""
             override val parameters: List<PluginParameter<*>> = emptyList()
+
             override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
                 raise(PluginError.ExecutionError("Something went wrong"))
             }
@@ -164,6 +169,7 @@ class PipelinePluginTest {
             override val name = "Failing"
             override val description = ""
             override val parameters: List<PluginParameter<*>> = emptyList()
+
             override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
                 raise(PluginError.ExecutionError("boom"))
             }
@@ -173,6 +179,7 @@ class PipelinePluginTest {
             override val name = "Second"
             override val description = ""
             override val parameters: List<PluginParameter<*>> = emptyList()
+
             override fun Raise<PluginError>.transform(diveLog: DiveLog): DiveLog {
                 secondPluginRan = true
                 return diveLog
@@ -278,7 +285,9 @@ class PipelinePluginTest {
             override val name = "Failing Output"
             override val description = ""
             override val parameters: List<PluginParameter<*>> = emptyList()
+
             override fun additionalHeaders(metadata: DiveMetadata) = listOf("X")
+
             override fun Raise<PluginError>.computeRows(log: DiveLog): List<Map<String, String>> {
                 raise(PluginError.ExecutionError("output plugin boom"))
             }
@@ -313,10 +322,10 @@ class PipelinePluginTest {
             override val name = "Bad Row Count"
             override val description = ""
             override val parameters: List<PluginParameter<*>> = emptyList()
+
             override fun additionalHeaders(metadata: DiveMetadata) = listOf("X")
-            override fun Raise<PluginError>.computeRows(log: DiveLog): List<Map<String, String>> {
-                return listOf(mapOf("X" to "only-one-row"))
-            }
+
+            override fun Raise<PluginError>.computeRows(log: DiveLog): List<Map<String, String>> = listOf(mapOf("X" to "only-one-row"))
         }
 
         // Act

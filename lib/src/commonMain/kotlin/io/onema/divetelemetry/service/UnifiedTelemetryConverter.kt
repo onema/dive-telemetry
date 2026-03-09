@@ -1,9 +1,9 @@
 package io.onema.divetelemetry.service
 
 import io.onema.divetelemetry.domain.DepthUnit
-import io.onema.divetelemetry.domain.PressureUnit
 import io.onema.divetelemetry.domain.DiveLog
 import io.onema.divetelemetry.domain.DiveSample
+import io.onema.divetelemetry.domain.PressureUnit
 import io.onema.divetelemetry.domain.TelemetryOutput
 import io.onema.divetelemetry.domain.TelemetryRow
 import io.onema.divetelemetry.domain.TempUnit
@@ -18,7 +18,6 @@ import io.onema.divetelemetry.util.wallClockTime
 import kotlin.math.abs
 
 class UnifiedTelemetryConverter : TelemetryConverter {
-
     override fun convert(log: DiveLog): TelemetryOutput {
         val meta = log.metadata
         val depthSuffix = when (meta.depthUnit) {
@@ -110,12 +109,14 @@ class UnifiedTelemetryConverter : TelemetryConverter {
 private fun computeMaxDepthStates(samples: List<DiveSample>): List<String> {
     val initial = 0.0 to "0"
 
-    return samples.runningFold(initial) { (maxDepthAbs, maxDepthFormatted), sample ->
-        val depthAbs = abs(sample.depth)
-        if (depthAbs > maxDepthAbs) {
-            depthAbs to formatTwoDecimals(sample.depth)
-        } else {
-            maxDepthAbs to maxDepthFormatted
-        }
-    }.drop(1).map { it.second }
+    return samples
+        .runningFold(initial) { (maxDepthAbs, maxDepthFormatted), sample ->
+            val depthAbs = abs(sample.depth)
+            if (depthAbs > maxDepthAbs) {
+                depthAbs to formatTwoDecimals(sample.depth)
+            } else {
+                maxDepthAbs to maxDepthFormatted
+            }
+        }.drop(1)
+        .map { it.second }
 }

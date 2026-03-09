@@ -6,6 +6,8 @@ A Kotlin Multiplatform project that converts [Shearwater](https://www.shearwater
 and [Garmin](https://www.garmin.com/) dive computer exports into the CSV format that can be used
 by [Telemetry ](https://telemetry.com/) for videos.
 
+![Dive Telemetry](docs/img/dive-telemetry-ui.png)]
+
 ## Purpose
 
 This project was created to convert my dive computer data from various sources, like Shearwater and Garmin, into a universal CSV format. I
@@ -153,6 +155,24 @@ The app provides:
 - Dynamic plugin controls generated from each plugin's parameter descriptors
 - Convert button that runs the full two-phase pipeline with configured plugins
 
+## Documentation
+
+Full documentation is available at [GitHub Pages](https://onema.github.io/dive-telemetry/).
+
+To build and preview docs locally:
+
+```bash
+npm install
+npm run docs:dev
+```
+
+The docs include:
+- [CLI usage guide](docs/cli-usage.md)
+- [Plugin system reference](docs/plugin-system.md)
+- [Architecture and domain model](docs/parsing-and-domain-model.md)
+- [Error handling patterns](docs/error-handling.md)
+- And more...
+
 ## CLI tool
 
 See **[docs/cli-usage.md](docs/cli-usage.md)** for usage, options, and build commands.
@@ -217,3 +237,7 @@ Extensive tests across most files covering parsing, conversion, interpolation, C
 
 `:lib` and `:cli` target: `jvm`, `macosArm64`, `macosX64`, `linuxX64`, `mingwX64`.
 Linux and Windows binaries are cross-compiled from macOS -- not CI-validated.
+
+## Future Work
+
+Walkthrough on how to use the telemetry data in Telemetry Overlay to generate dive gauges, port and publish existing patterns to use the generated files.
