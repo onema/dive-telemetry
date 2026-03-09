@@ -11,6 +11,9 @@ Source → parse → [DiveLogPlugin chain] → convert (24 cols) → [OutputPlug
 The core converter produces **24 columns**. Output plugins add additional columns on demand —
 up to **49 columns** when all three built-in output plugins are enabled.
 
+
+![Dive Telemetry](img/dive-telemetry-ui.png)]
+
 ## Supported formats
 
 | Format         | Input               | Parser                    |

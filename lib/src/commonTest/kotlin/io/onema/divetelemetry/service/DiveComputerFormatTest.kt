@@ -6,7 +6,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class DiveComputerFormatTest {
-
     @Test
     fun `ShearwaterFormat has correct id`() {
         // Arrange / Act / Assert

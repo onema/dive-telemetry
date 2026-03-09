@@ -17,10 +17,10 @@ object SafetyStopPlugin : OutputPlugin {
     override val parameters: List<PluginParameter<*>> = listOf(
         BooleanParameter(
             key = "enabled",
-            name = "Enable Safety Stop",
-            description = "Add safety stop countdown timer column.",
+            name = name,
+            description = description,
             defaultValue = false,
-        )
+        ),
     )
 
     override fun additionalHeaders(metadata: DiveMetadata): List<String> = listOf(
@@ -71,7 +71,7 @@ object SafetyStopPlugin : OutputPlugin {
             hasBeenDeep = false,
         )
 
-        return samples.runningFold(initial) { state, sample ->
+        val result = samples.runningFold(initial) { state, sample ->
             val depthAbs = abs(sample.depth)
 
             val newBeginningPhase = when {
@@ -103,8 +103,8 @@ object SafetyStopPlugin : OutputPlugin {
                 previousTimeSeconds = sample.timeSeconds,
                 hasBeenDeep = hasBeenDeep,
             )
-        }.drop(1)
+        }
+
+        return result.drop(1)
     }
-
 }
-
